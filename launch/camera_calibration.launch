@@ -1,0 +1,15 @@
+<launch>
+
+  <arg name="sim"             default="false" />
+  <arg name="camera"          default="sr300" />
+
+  <node name="camera_calibration" pkg="grasp_and_place" type="camera_calibration_node" respawn="false" output="screen">
+  </node>
+
+  <include file="$(find object_detection)/launch/frame_broadcaster.launch" />
+  <include file="$(find realsense_camera)/launch/sr300_nodelet_rgbd.launch">
+    <arg name="camera"        value="$(arg camera)"/>
+  </include>
+
+
+</launch>
