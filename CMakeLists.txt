@@ -97,16 +97,12 @@ add_executable(
   src/milling_path.cpp
   # src/milling_path_node.cpp
 )
-target_link_libraries(
-  milling_path
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
+
+add_executable(
+  milling_path_node
+  src/MillingPath.cpp
+  src/milling_path_node.cpp
 )
-# add_executable(
-#   stack_each_node
-#   src/StackEach.cpp
-#   src/stack_each_node.cpp
-# )
 
 # add_executable(
 #   set_grasping_pose_node
@@ -127,13 +123,17 @@ target_link_libraries(
 
 
 ## Specify libraries to link a library or executable target against
+target_link_libraries(
+  milling_path
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
 
-#
-# target_link_libraries(
-#   milling_path
-#   ${PROJECT_NAME}
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(
+  milling_path_node
+  # ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
 #
 # target_link_libraries(
 #   stack_each_node

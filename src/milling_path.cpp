@@ -66,31 +66,21 @@ int main(int argc, char **argv)
   ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
   moveit_msgs::DisplayTrajectory display_trajectory;
 
-  // Getting Basic Information
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^
-  //
-  // We can print the name of the reference frame for this robot.
   ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
-
-  // We can also print the name of the end-effector link for this group.
   ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
 
+
+  ros::Publisher target_pose_publisher_ = node_handle.advertise<geometry_msgs::PoseStamped>("/move_pose", 1, true);
+  // target_pose_publisher_.publish(target_poses.back());
+
+
   // Planning to a Pose goal
-  // ^^^^^^^^^^^^^^^^^^^^^^^
-  // We can plan a motion for this group to a desired pose for the
-  // end-effector.
   geometry_msgs::Pose target_pose1;
   target_pose1.orientation.w = 1.0;
   target_pose1.position.x = 0.28;
   target_pose1.position.y = -0.7;
   target_pose1.position.z = 1.0;
   group.setPoseTarget(target_pose1);
-
-
-  // Now, we call the planner to compute the plan
-  // and visualize it.
-  // Note that we are just planning, not asking move_group
-  // to actually move the robot.
   moveit::planning_interface::MoveGroup::Plan my_plan;
   bool success = group.plan(my_plan);
 
@@ -98,12 +88,6 @@ int main(int argc, char **argv)
   /* Sleep to give Rviz time to visualize the plan. */
   sleep(5.0);
 
-  // Visualizing plans
-  // ^^^^^^^^^^^^^^^^^
-  // Now that we have a plan we can visualize it in Rviz.  This is not
-  // necessary because the group.plan() call we made above did this
-  // automatically.  But explicitly publishing plans is useful in cases that we
-  // want to visualize a previously created plan.
   if (1)
   {
     ROS_INFO("Visualizing plan 1 (again)");
@@ -113,33 +97,9 @@ int main(int argc, char **argv)
     /* Sleep to give Rviz time to visualize the plan. */
     sleep(5.0);
   }
-
-  // Moving to a pose goal
-  // ^^^^^^^^^^^^^^^^^^^^^
-  //
-  // Moving to a pose goal is similar to the step above
-  // except we now use the move() function. Note that
-  // the pose goal we had set earlier is still active
-  // and so the robot will try to move to that goal. We will
-  // not use that function in this tutorial since it is
-  // a blocking function and requires a controller to be active
-  // and report success on execution of a trajectory.
-
-  /* Uncomment below line when working with a real robot*/
-  /* group.move() */
-
-  // Planning to a joint-space goal
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  //
-  // Let's set a joint space goal and move towards it.  This will replace the
-  // pose target we set above.
-  //
-  // First get the current set of joint values for the group.
   std::vector<double> group_variable_values;
   group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
 
-  // Now, let's modify one of the joints, plan to the new joint
-  // space goal and visualize the plan.
   group_variable_values[0] = -1.0;
   group.setJointValueTarget(group_variable_values);
   success = group.plan(my_plan);
@@ -237,28 +197,28 @@ int main(int argc, char **argv)
   return 0;
 }
 
-bool MoveToPose(const geometry_msgs::PoseStamped& target_pose, double eef_step)
+bool MoveToPose(moveit::planning_interface::MoveGroup move_group_, const geometry_msgs::PoseStamped& target_pose, double eef_step)
 {
 
   // approaching_pose_publisher_.publish(target_pose);
-  geometry_msgs::PoseStamped current_pose = move_group_->getCurrentPose();
+  geometry_msgs::PoseStamped current_pose = move_group_.getCurrentPose();
   std::vector<geometry_msgs::Pose> waypoints;
   waypoints.push_back(current_pose.pose);
   waypoints.push_back(target_pose.pose);
 
-  robot_state::RobotState rs = *move_group_->getCurrentState();
-  move_group_->setStartState(rs);
+  robot_state::RobotState rs = *move_group_.getCurrentState();
+  move_group_.setStartState(rs);
 
   // Plan trajectory.
   moveit_msgs::RobotTrajectory trajectory;
   moveit_msgs::MoveItErrorCodes error_code;
-  double path_fraction = move_group_->computeCartesianPath(waypoints, eef_step, 0.0, trajectory, true, &error_code);
+  double path_fraction = move_group_.computeCartesianPath(waypoints, eef_step, 0.0, trajectory, true, &error_code);
   if(path_fraction < 1.0) {
     ROS_WARN_STREAM("GraspObject: Could not calculate Cartesian Path.");
     return false;
   }
 
-  robot_trajectory::RobotTrajectory robot_trajectory(rs.getRobotModel(), move_group_->getName());
+  robot_trajectory::RobotTrajectory robot_trajectory(rs.getRobotModel(), move_group_.getName());
   robot_trajectory.setRobotTrajectoryMsg(rs, trajectory);
 
   trajectory_processing::IterativeParabolicTimeParameterization iptp;
@@ -267,7 +227,7 @@ bool MoveToPose(const geometry_msgs::PoseStamped& target_pose, double eef_step)
 
   moveit::planning_interface::MoveGroup::Plan my_plan;
   moveit_msgs::RobotState robot_state_msg;
-  robot_state::robotStateToRobotStateMsg(*move_group_->getCurrentState(), robot_state_msg);
+  robot_state::robotStateToRobotStateMsg(*move_group_.getCurrentState(), robot_state_msg);
 
   my_plan.trajectory_ = trajectory;
   my_plan.start_state_ = robot_state_msg;
@@ -282,6 +242,57 @@ bool MoveToPose(const geometry_msgs::PoseStamped& target_pose, double eef_step)
   // double diff_joint_6 =  my_plan.trajectory_.joint_trajectory.points.back().positions[5] - my_plan.trajectory_.joint_trajectory.points[0].positions[5];
   // if(diff_joint_6 > M_PI_2) ROS_WARN_STREAM( "joint 6 diff: " << diff_joint_6 );
 
-  move_group_->execute(my_plan);
+  move_group_.execute(my_plan);
+  return true;
+}
+
+bool MoveToPose(moveit::planning_interface::MoveGroup move_group_, std::vector<geometry_msgs::PoseStamped> target_poses)
+{
+
+  //  move_group_.setJointValueTarget(target_pose);
+  geometry_msgs::PoseStamped current_pose = move_group_.getCurrentPose();
+  std::vector<geometry_msgs::Pose> waypoints;
+  waypoints.push_back(current_pose.pose);
+  for(auto pt : target_poses) waypoints.push_back(pt.pose);
+
+  robot_state::RobotState rs = *move_group_.getCurrentState();
+  move_group_.setStartState(rs);
+
+  // Plan trajectory.
+  moveit_msgs::RobotTrajectory trajectory;
+  moveit_msgs::MoveItErrorCodes error_code;
+  double path_fraction = move_group_.computeCartesianPath(waypoints, 0.03, 0.0, trajectory, true, &error_code);
+  if(path_fraction < 1.0) {
+    ROS_WARN_STREAM("PlacesObject: Could not calculate Cartesian Path.");
+    return false;
+  }
+
+  robot_trajectory::RobotTrajectory robot_trajectory(rs.getRobotModel(), move_group_.getName());
+  robot_trajectory.setRobotTrajectoryMsg(rs, trajectory);
+
+  trajectory_processing::IterativeParabolicTimeParameterization iptp;
+  iptp.computeTimeStamps(robot_trajectory, 1.0);
+  robot_trajectory.getRobotTrajectoryMsg(trajectory);
+
+  moveit::planning_interface::MoveGroup::Plan my_plan;
+  moveit_msgs::RobotState robot_state_msg;
+  robot_state::robotStateToRobotStateMsg(*move_group_.getCurrentState(), robot_state_msg);
+
+  my_plan.trajectory_ = trajectory;
+  my_plan.start_state_ = robot_state_msg;
+
+
+  // removing points with velocity zero
+  my_plan.trajectory_.joint_trajectory.points.erase(
+      std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1, my_plan.trajectory_.joint_trajectory.points.end(), [](const trajectory_msgs::JointTrajectoryPoint & p)
+      { return p.time_from_start.toSec() == 0;}),
+      my_plan.trajectory_.joint_trajectory.points.end());
+
+  // check the joint 6 rotation:
+  double diff_joint_6 =  my_plan.trajectory_.joint_trajectory.points.back().positions[5] - my_plan.trajectory_.joint_trajectory.points[0].positions[5];
+  if(diff_joint_6 > M_PI_2) ROS_WARN_STREAM( "joint 6 diff: " << diff_joint_6 );
+
+  move_group_.setPlanningTime(60);
+  move_group_.execute(my_plan);
   return true;
 }

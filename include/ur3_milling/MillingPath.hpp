@@ -18,7 +18,6 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf/transform_listener.h>
 
-
 // Eigen
 #include <Eigen/Core>
 
@@ -33,9 +32,6 @@
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
 
-// ur3_milling interface
-#include <ur3_milling/Object.hpp>
-#include <ur3_milling/GripperInterface.hpp>
 
 namespace ur3_milling {
 
@@ -62,53 +58,16 @@ private:
    */
   bool LoadStackingConfiguration();
 
-  bool LoadGraspingPoses();
+  // bool DetectObject(std::vector<Object>& models_to_detect);
 
-  bool LoadCollisionEnvironment();
-
-  bool ExecuteMillingPath(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
-
-  bool ExecuteLocalization(std::vector<Object> models_to_localize = std::vector<Object>());
-
-  bool DetectObject(std::vector<Object>& models_to_detect);
-
-  bool DetectObjectRotate(const int object_index);
-
-  bool LocalizeObjects();
+  // bool DetectObjectRotate(const int object_index);
+  //
+  // bool LocalizeObjects();
 
   bool MoveToPose(const geometry_msgs::PoseStamped& target_pose);
 
-  bool LocateRedPoint();
+  bool MoveToPoses(std::vector<geometry_msgs::PoseStamped> target_poses);
 
-  bool PickAndPlaceObject(const int object_index);
-
-  bool EvaluatePlacedPose(const int object_index);
-
-  bool PoseRefinement(const int stack_model_index);
-
-  /*!
-   * Add collision object to the planning scene. If collision object already exists
-   * the position is updated.
-   * @param object_name id of the object.
-   * @param object_index index in the vector of the desired configuration.
-   * @return true if successful
-   */
-  bool AddCollisionObject(const std::string object_name, const int object_index);
-
-  bool Regrasp(const int desired_stacking_index);
-
-  /*!
-   * Checks if the desired grasping pose is valid, i.e. there are no collisions.
-   * @param[in] pose the target TCP pose.
-   * @return true if grasping pose is feasible, false otherwise.
-   */
-  bool CheckCollision(const geometry_msgs::Pose pose);
-
-  /*!
-   * Computes the target TCP pose of the robot dependent on the desired object pose.
-   * @param stack_model_index index of the desired object to stack.
-   * @return the target TCP pose to reach the desired object pose.
-   */
   geometry_msgs::Pose GetTargetTCPPose(const int stack_model_index);
 
   visualization_msgs::Marker VisualizeMarker(const int marker_type, const geometry_msgs::Pose pose, const int id, const float r, const float g, const float b, const float a, const Vector3D scale = Vector3D::Ones());
@@ -131,39 +90,13 @@ private:
 	visualization_msgs::MarkerArray mesh_;
 	visualization_msgs::MarkerArray refined_mesh_;
 
-	//! Service clients.
-  ros::ServiceClient check_validity_;
-
-	//! Gripper interface.
-  std::shared_ptr<GripperInterface> gripper_interface_;
-
-  //! Grasping poses.
-  std::map<std::string, std::vector<GraspingConfigruation>> grasping_poses_;
-
-  //! Service server.
-  ros::ServiceServer execute_stacking_;
-  ros::ServiceServer open_gripper_;
-
-
-  //! Desired stacking configuration.
-  std::vector<Object> desired_stacking_configuration_;
-  std::vector<Object> stacked_objects_;
-
   //! Model locations from object localisation.
   std::vector<geometry_msgs::PoseStamped> model_locations_;
 
   //! MoveIt! move group interface.
   std::shared_ptr<moveit::planning_interface::MoveGroup> move_group_;
   double velocity_scaling_;
-
-  //! MoveIt! planning scene interface.
   std::shared_ptr<moveit::planning_interface::PlanningSceneInterface> planning_scene_;
-
-  // Approaching distance for detection.
-  double distance_to_objects_;
-
-  //! Colored dot location.
-  geometry_msgs::Point center_of_colored_dot_;
 
   //! Allowed deviation to target pose.
   double position_diff_;
