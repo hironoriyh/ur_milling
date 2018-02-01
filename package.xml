@@ -5,48 +5,46 @@
   <description>
      An automatically generated package with all the configuration and launch files for using the ur3 with the MoveIt Motion Planning Framework
   </description>
-  <author email="fxm@ipa.fhg.de">Hironori Yoshida</author>
-  <maintainer email="g.a.vanderhoorn@tudelft.nl">G.A. vd. Hoorn</maintainer>
+
+  <maintainer email="hyoshida@preferred.jp">Hironori Yoshida</maintainer>
+
 
   <license>BSD</license>
-
-  <url type="website">http://moveit.ros.org/</url>
-  <url type="bugtracker">https://github.com/ros-planning/moveit_setup_assistant/issues</url>
-  <url type="repository">https://github.com/ros-planning/moveit_setup_assistant</url>
-
-  <run_depend>moveit_ros_move_group</run_depend>
-  <run_depend>moveit_planners_ompl</run_depend>
-  <run_depend>moveit_ros_visualization</run_depend>
-  <run_depend>moveit_fake_controller_manager</run_depend>
-  <run_depend>moveit_simple_controller_manager</run_depend>
-  <run_depend>joint_state_publisher</run_depend>
-  <run_depend>robot_state_publisher</run_depend>
-  <run_depend>xacro</run_depend>
-  <build_depend>ur_description</build_depend>
-  <run_depend>ur_description</run_depend>
-
-  <build_depend>ur_modern_driver</build_depend>
-  <run_depend>ur_modern_driver</run_depend>
-
-  <build_depend>moveit_msgs</build_depend>
-  <run_depend>moveit_msgs</run_depend>
-
-  <build_depend>moveit_ros_planning_interface</build_depend>
-  <run_depend>moveit_ros_planning_interface</run_depend>
-
-  <build_depend>roscpp</build_depend>
-  <run_depend>roscpp</run_depend>
-
-  <build_depend>std_msgs</build_depend>
-  <run_depend>std_msgs</run_depend>
-
-  <build_depend>geometric_shapes</build_depend>
-  <run_depend>geometric_shapes</run_depend>
+  <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>geometric_shapes</build_depend>
+  <build_depend>moveit_msgs</build_depend>
+  <build_depend>moveit_ros_planning_interface</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>object_detection</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>tf_conversions</build_depend>
+  <build_depend>object_detection</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>grasp_and_place_msgs</build_depend>
+  <build_depend>urdf_models</build_depend>
+  <build_depend>opencv2</build_depend>
+  <build_depend>cv_bridge</build_depend>
+
+
   <run_depend>geometry_msgs</run_depend>
-
-
-  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>geometric_shapes</run_depend>
+  <run_depend>moveit_msgs</run_depend>
+  <run_depend>moveit_ros_planning_interface</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>object_detection</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>tf_conversions</run_depend>
+  <run_depend>object_detection</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>grasp_and_place_msgs</run_depend>
+  <run_depend>urdf_models</run_depend>
+  <run_depend>opencv2</run_depend>
+  <run_depend>cv_bridge</run_depend>
 
 </package>

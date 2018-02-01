@@ -5,10 +5,10 @@
  *      Author: Hironori Yoshida
  */
 
-#include <grasp_and_place/MillingPath.hpp>
+#include <ur3_milling/MillingPath.hpp>
 
-#include <grasp_and_place/GraspObject.hpp>
-#include <grasp_and_place/PlaceObject.hpp>
+#include <ur3_milling/GraspObject.hpp>
+#include <ur3_milling/PlaceObject.hpp>
 #include <object_detection/DetectObject.h>
 #include <object_detection/LocaliseObjects.h>
 
@@ -21,14 +21,14 @@
 #include <geometric_shapes/shape_messages.h>
 #include <moveit_msgs/GetStateValidity.h>
 #include <moveit/robot_state/conversions.h>
-#include "grasp_and_place_msgs/HandCommand.h"
+#include "ur3_milling_msgs/HandCommand.h"
 
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 
-namespace grasp_and_place {
+namespace ur3_milling {
 
 MillingPath::MillingPath(ros::NodeHandle& nh)
     : nh_(nh),
@@ -97,7 +97,7 @@ bool MillingPath::LoadStackingConfiguration()
 {
   desired_stacking_configuration_.clear();
   // Load stacking configuration.
-  std::string path = ros::package::getPath("grasp_and_place");
+  std::string path = ros::package::getPath("ur3_milling");
   path = path + "/config/stacking_configuration_serial.yaml";
   std::string commandString = "rosparam load " + path + " /serial_stacking";
   const char* command = commandString.c_str();

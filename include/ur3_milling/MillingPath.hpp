@@ -33,11 +33,11 @@
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
 
-// grasp_and_place interface
-#include <grasp_and_place/Object.hpp>
-#include <grasp_and_place/GripperInterface.hpp>
+// ur3_milling interface
+#include <ur3_milling/Object.hpp>
+#include <ur3_milling/GripperInterface.hpp>
 
-namespace grasp_and_place {
+namespace ur3_milling {
 
 // typedefs.
 typedef Eigen::Vector3d Vector3D;
@@ -174,4 +174,4 @@ private:
 
 };
 
-} // grasp_and_place
+} // ur3_milling

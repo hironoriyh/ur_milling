@@ -43,6 +43,9 @@
 #include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
 
+
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "move_group_interface_tutorial");
