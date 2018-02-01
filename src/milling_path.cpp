@@ -43,8 +43,11 @@
 #include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
 
-
+#include <tf_conversions/tf_eigen.h>
+#include <eigen_conversions/eigen_msg.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
+#include <moveit/robot_state/conversions.h>
+
 
 int main(int argc, char **argv)
 {
@@ -56,7 +59,7 @@ int main(int argc, char **argv)
 
   /* This sleep is ONLY to allow Rviz to come up */
   sleep(20.0);
-  moveit::planning_interface::MoveGroup group("right_arm");
+  moveit::planning_interface::MoveGroup group("mainpulator");
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
   // (Optional) Create a publisher for visualizing plans in Rviz.
@@ -228,109 +231,57 @@ int main(int argc, char **argv)
   /* Sleep to give Rviz time to visualize the plan. */
   sleep(15.0);
 
-
-  // Adding/Removing Objects and Attaching/Detaching Objects
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  // First, we will define the collision object message.
-  moveit_msgs::CollisionObject collision_object;
-  collision_object.header.frame_id = group.getPlanningFrame();
-
-  /* The id of the object is used to identify it. */
-  collision_object.id = "box1";
-
-  /* Define a box to add to the world. */
-  shape_msgs::SolidPrimitive primitive;
-  primitive.type = primitive.BOX;
-  primitive.dimensions.resize(3);
-  primitive.dimensions[0] = 0.4;
-  primitive.dimensions[1] = 0.1;
-  primitive.dimensions[2] = 0.4;
-
-  /* A pose for the box (specified relative to frame_id) */
-  geometry_msgs::Pose box_pose;
-  box_pose.orientation.w = 1.0;
-  box_pose.position.x =  0.6;
-  box_pose.position.y = -0.4;
-  box_pose.position.z =  1.2;
-
-  collision_object.primitives.push_back(primitive);
-  collision_object.primitive_poses.push_back(box_pose);
-  collision_object.operation = collision_object.ADD;
-
-  std::vector<moveit_msgs::CollisionObject> collision_objects;
-  collision_objects.push_back(collision_object);
-
-  // Now, let's add the collision object into the world
-  ROS_INFO("Add an object into the world");
-  planning_scene_interface.addCollisionObjects(collision_objects);
-
-  /* Sleep so we have time to see the object in RViz */
-  sleep(2.0);
-
-  // Planning with collision detection can be slow.  Lets set the planning time
-  // to be sure the planner has enough time to plan around the box.  10 seconds
-  // should be plenty.
-  group.setPlanningTime(10.0);
-
-
-  // Now when we plan a trajectory it will avoid the obstacle
-  group.setStartState(*group.getCurrentState());
-  group.setPoseTarget(target_pose1);
-  success = group.plan(my_plan);
-
-  ROS_INFO("Visualizing plan 5 (pose goal move around box) %s",
-    success?"":"FAILED");
-  /* Sleep to give Rviz time to visualize the plan. */
-  sleep(10.0);
-
-
-  // Now, let's attach the collision object to the robot.
-  ROS_INFO("Attach the object to the robot");
-  group.attachObject(collision_object.id);
-  /* Sleep to give Rviz time to show the object attached (different color). */
-  sleep(4.0);
-
-
-  // Now, let's detach the collision object from the robot.
-  ROS_INFO("Detach the object from the robot");
-  group.detachObject(collision_object.id);
-  /* Sleep to give Rviz time to show the object detached. */
-  sleep(4.0);
-
-
-  // Now, let's remove the collision object from the world.
-  ROS_INFO("Remove the object from the world");
-  std::vector<std::string> object_ids;
-  object_ids.push_back(collision_object.id);
-  planning_scene_interface.removeCollisionObjects(object_ids);
-  /* Sleep to give Rviz time to show the object is no longer there. */
-  sleep(4.0);
-
-
-  // Dual-arm pose goals
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  // First define a new group for addressing the two arms. Then define
-  // two separate pose goals, one for each end-effector. Note that
-  // we are reusing the goal for the right arm above
-  moveit::planning_interface::MoveGroup two_arms_group("arms");
-
-  two_arms_group.setPoseTarget(target_pose1, "r_wrist_roll_link");
-
-  geometry_msgs::Pose target_pose2;
-  target_pose2.orientation.w = 1.0;
-  target_pose2.position.x = 0.7;
-  target_pose2.position.y = 0.15;
-  target_pose2.position.z = 1.0;
-
-  two_arms_group.setPoseTarget(target_pose2, "l_wrist_roll_link");
-
-  // Now, we can plan and visualize
-  moveit::planning_interface::MoveGroup::Plan two_arms_plan;
-  two_arms_group.plan(two_arms_plan);
-  sleep(4.0);
-
 // END_TUTORIAL
 
   ros::shutdown();
   return 0;
+}
+
+bool MoveToPose(const geometry_msgs::PoseStamped& target_pose, double eef_step)
+{
+
+  // approaching_pose_publisher_.publish(target_pose);
+  geometry_msgs::PoseStamped current_pose = move_group_->getCurrentPose();
+  std::vector<geometry_msgs::Pose> waypoints;
+  waypoints.push_back(current_pose.pose);
+  waypoints.push_back(target_pose.pose);
+
+  robot_state::RobotState rs = *move_group_->getCurrentState();
+  move_group_->setStartState(rs);
+
+  // Plan trajectory.
+  moveit_msgs::RobotTrajectory trajectory;
+  moveit_msgs::MoveItErrorCodes error_code;
+  double path_fraction = move_group_->computeCartesianPath(waypoints, eef_step, 0.0, trajectory, true, &error_code);
+  if(path_fraction < 1.0) {
+    ROS_WARN_STREAM("GraspObject: Could not calculate Cartesian Path.");
+    return false;
+  }
+
+  robot_trajectory::RobotTrajectory robot_trajectory(rs.getRobotModel(), move_group_->getName());
+  robot_trajectory.setRobotTrajectoryMsg(rs, trajectory);
+
+  trajectory_processing::IterativeParabolicTimeParameterization iptp;
+  iptp.computeTimeStamps(robot_trajectory, 1.0);
+  robot_trajectory.getRobotTrajectoryMsg(trajectory);
+
+  moveit::planning_interface::MoveGroup::Plan my_plan;
+  moveit_msgs::RobotState robot_state_msg;
+  robot_state::robotStateToRobotStateMsg(*move_group_->getCurrentState(), robot_state_msg);
+
+  my_plan.trajectory_ = trajectory;
+  my_plan.start_state_ = robot_state_msg;
+
+  // removing points with velocity zero
+  my_plan.trajectory_.joint_trajectory.points.erase(
+      std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1, my_plan.trajectory_.joint_trajectory.points.end(), [](const trajectory_msgs::JointTrajectoryPoint & p)
+      { return p.time_from_start.toSec() == 0;}),
+      my_plan.trajectory_.joint_trajectory.points.end());
+
+  // check the joint 6 rotation:
+  // double diff_joint_6 =  my_plan.trajectory_.joint_trajectory.points.back().positions[5] - my_plan.trajectory_.joint_trajectory.points[0].positions[5];
+  // if(diff_joint_6 > M_PI_2) ROS_WARN_STREAM( "joint 6 diff: " << diff_joint_6 );
+
+  move_group_->execute(my_plan);
+  return true;
 }
