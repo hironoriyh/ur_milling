@@ -112,9 +112,10 @@ int main(int argc, char **argv)
     Tokens tokens;
     boost::split( tokens, line, boost::is_any_of(" ") );
     std::string::size_type sz;
-    Point point_struct = new Point(std::stod(tokens[0], &sz),
-                            std::stod(tokens[1], &sz),
-                            std::stod(tokens[2], &sz));
+    Point point_struct = {std::stod(tokens[0], &sz), std::stod(tokens[1], &sz), std::stod(tokens[2], &sz)};
+//    point_struct.x = std::stod(tokens[0], &sz);
+//    point_struct.y = std::stod(tokens[1], &sz);
+//    point_struct.z = std::stod(tokens[2], &sz);
     points.push_back(point_struct);
   }
   std::cout << "size of string: " << mylines.size() <<  std::endl;
@@ -125,8 +126,6 @@ int main(int argc, char **argv)
   }
 //  std::cout << points.size() << std::endl;
 //  for(int i=0; i<points.size(); i++) std::cout << points.at(i) << std::endl;
-
-
 
 //  std::vector<double> group_variable_values;
 //  group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
