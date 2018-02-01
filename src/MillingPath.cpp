@@ -51,6 +51,13 @@ MillingPath::MillingPath(ros::NodeHandle& nh)
   // Set planning scene interface.
   planning_scene_.reset(new moveit::planning_interface::PlanningSceneInterface());
 
+  std::vector<double> group_variable_values;
+  move_group_->getCurrentState()->copyJointGroupPositions(move_group_->getCurrentState()->getRobotModel()->getJointModelGroup(move_group_->getName()), group_variable_values);
+  move_group_->setJointValueTarget(group_variable_values);
+ //  bool success = move_group_->plan(my_plan);
+//   ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
+
+
 }
 
 MillingPath::~MillingPath()

@@ -48,18 +48,25 @@
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
 #include <moveit/robot_state/conversions.h>
 
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <locale>
+#include <string>
+
+#include <ros/package.h>
+
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "move_group_interface_tutorial");
+  ros::init(argc, argv, "milling_path");
   ros::NodeHandle node_handle;
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
 
   /* This sleep is ONLY to allow Rviz to come up */
-  sleep(20.0);
-  moveit::planning_interface::MoveGroup group("mainpulator");
+  moveit::planning_interface::MoveGroup group("manipulator");
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
   // (Optional) Create a publisher for visualizing plans in Rviz.
@@ -69,133 +76,106 @@ int main(int argc, char **argv)
   ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
   ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
 
-
+  moveit::planning_interface::MoveGroup::Plan my_plan;
   ros::Publisher target_pose_publisher_ = node_handle.advertise<geometry_msgs::PoseStamped>("/move_pose", 1, true);
   // target_pose_publisher_.publish(target_poses.back());
 
+  group.setMaxVelocityScalingFactor(0.1);
+  group.setPlannerId("RRTConnectkConfigDefault");
+  group.setPlanningTime(5);
+  group.setNumPlanningAttempts(10);
 
-  // Planning to a Pose goal
-  geometry_msgs::Pose target_pose1;
-  target_pose1.orientation.w = 1.0;
-  target_pose1.position.x = 0.28;
-  target_pose1.position.y = -0.7;
-  target_pose1.position.z = 1.0;
-  group.setPoseTarget(target_pose1);
-  moveit::planning_interface::MoveGroup::Plan my_plan;
-  bool success = group.plan(my_plan);
+  std::string line;
+  std::string ur_path = ros::package::getPath("ur3_milling") + "/data/test.txt";
+  ROS_INFO_STREAM("ur_path: " << ur_path);
+  std::ifstream infile(ur_path);
 
-  ROS_INFO("Visualizing plan 1 (pose goal) %s",success?"":"FAILED");
-  /* Sleep to give Rviz time to visualize the plan. */
-  sleep(5.0);
 
-  if (1)
+  struct Point{
+    double x;
+    double y;
+    double z;
+    Point(double x_, double y_, double z_):x(x_), y(y_), z(z_) {}
+  };
+
+  std::vector<std::string> mylines;
+  std::vector<Point> points;
+  int count = 0;
+
+  while (std::getline(infile, line))  // To get you all the lines.
   {
-    ROS_INFO("Visualizing plan 1 (again)");
-    display_trajectory.trajectory_start = my_plan.start_state_;
-    display_trajectory.trajectory.push_back(my_plan.trajectory_);
-    display_publisher.publish(display_trajectory);
-    /* Sleep to give Rviz time to visualize the plan. */
-    sleep(5.0);
+    mylines.push_back(line);
+    count ++;
+    std::cout<< count << " line: " <<  line << std::endl;
+
+    typedef std::vector<std::string> Tokens;
+    Tokens tokens;
+    boost::split( tokens, line, boost::is_any_of(" ") );
+    std::string::size_type sz;
+    Point point_struct = new Point(std::stod(tokens[0], &sz),
+                            std::stod(tokens[1], &sz),
+                            std::stod(tokens[2], &sz));
+    points.push_back(point_struct);
   }
-  std::vector<double> group_variable_values;
-  group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
+  std::cout << "size of string: " << mylines.size() <<  std::endl;
+  std::cout << "size of points: " << points.size() <<  std::endl;
 
-  group_variable_values[0] = -1.0;
-  group.setJointValueTarget(group_variable_values);
-  success = group.plan(my_plan);
+  for(int i=0; i<points.size(); i++) {
+    std::cout << points.at(i).x << " , "  << points.at(i).y << " , "  << points.at(i).z << std::endl;
+  }
+//  std::cout << points.size() << std::endl;
+//  for(int i=0; i<points.size(); i++) std::cout << points.at(i) << std::endl;
 
-  ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
-  /* Sleep to give Rviz time to visualize the plan. */
-  sleep(5.0);
 
-  // Planning with Path Constraints
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  //
-  // Path constraints can easily be specified for a link on the robot.
-  // Let's specify a path constraint and a pose goal for our group.
-  // First define the path constraint.
-  moveit_msgs::OrientationConstraint ocm;
-  ocm.link_name = "r_wrist_roll_link";
-  ocm.header.frame_id = "base_link";
-  ocm.orientation.w = 1.0;
-  ocm.absolute_x_axis_tolerance = 0.1;
-  ocm.absolute_y_axis_tolerance = 0.1;
-  ocm.absolute_z_axis_tolerance = 0.1;
-  ocm.weight = 1.0;
 
-  // Now, set it as the path constraint for the group.
-  moveit_msgs::Constraints test_constraints;
-  test_constraints.orientation_constraints.push_back(ocm);
-  group.setPathConstraints(test_constraints);
+//  std::vector<double> group_variable_values;
+//  group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
+//
+//  group_variable_values= {0.4497567415237427, -1.8413293997394007, -1.5451634565936487, -2.9070408979998987, -1.8363669554339808, -3.1571934858905237};
+//  group.setJointValueTarget(group_variable_values);
+//  bool success = group.plan(my_plan);
+//  ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
+//
+//  if (1)
+//  {
+//    ROS_INFO("Visualizing plan 1 (again)");
+//    display_trajectory.trajectory_start = my_plan.start_state_;
+//    display_trajectory.trajectory.push_back(my_plan.trajectory_);
+//    display_publisher.publish(display_trajectory);
+//    /* Sleep to give Rviz time to visualize the plan. */
+//    sleep(1.0);
+//  }
+//  group.execute(my_plan);
+//  sleep(1.0);
 
-  // We will reuse the old goal that we had and plan to it.
-  // Note that this will only work if the current state already
-  // satisfies the path constraints. So, we need to set the start
-  // state to a new pose.
-  robot_state::RobotState start_state(*group.getCurrentState());
-  geometry_msgs::Pose start_pose2;
-  start_pose2.orientation.w = 1.0;
-  start_pose2.position.x = 0.55;
-  start_pose2.position.y = -0.05;
-  start_pose2.position.z = 0.8;
-  const robot_state::JointModelGroup *joint_model_group =
-                  start_state.getJointModelGroup(group.getName());
-  start_state.setFromIK(joint_model_group, start_pose2);
-  group.setStartState(start_state);
 
-  // Now we will plan to the earlier pose target from the new
-  // start state that we have just created.
-  group.setPoseTarget(target_pose1);
-  success = group.plan(my_plan);
-
-  ROS_INFO("Visualizing plan 3 (constraints) %s",success?"":"FAILED");
-  /* Sleep to give Rviz time to visualize the plan. */
-  sleep(10.0);
-
-  // When done with the path constraint be sure to clear it.
-  group.clearPathConstraints();
-
-  // Cartesian Paths
-  // ^^^^^^^^^^^^^^^
-  // You can plan a cartesian path directly by specifying a list of waypoints
-  // for the end-effector to go through. Note that we are starting
-  // from the new start state above.  The initial pose (start state) does not
-  // need to be added to the waypoint list.
-  std::vector<geometry_msgs::Pose> waypoints;
-
-  geometry_msgs::Pose target_pose3 = start_pose2;
-  target_pose3.position.x += 0.2;
-  target_pose3.position.z += 0.2;
-  waypoints.push_back(target_pose3);  // up and out
-
-  target_pose3.position.y -= 0.2;
-  waypoints.push_back(target_pose3);  // left
-
-  target_pose3.position.z -= 0.2;
-  target_pose3.position.y += 0.2;
-  target_pose3.position.x -= 0.2;
-  waypoints.push_back(target_pose3);  // down and right (back to start)
-
-  // We want the cartesian path to be interpolated at a resolution of 1 cm
-  // which is why we will specify 0.01 as the max step in cartesian
-  // translation.  We will specify the jump threshold as 0.0, effectively
-  // disabling it.
-  moveit_msgs::RobotTrajectory trajectory;
-  double fraction = group.computeCartesianPath(waypoints,
-                                               0.01,  // eef_step
-                                               0.0,   // jump_threshold
-                                               trajectory);
-
-  ROS_INFO("Visualizing plan 4 (cartesian path) (%.2f%% acheived)",
-        fraction * 100.0);
-  /* Sleep to give Rviz time to visualize the plan. */
-  sleep(15.0);
 
 // END_TUTORIAL
 
   ros::shutdown();
   return 0;
 }
+
+struct ctype_table {
+    std::ctype_base::mask table[std::ctype<char>::table_size];
+    template <int N>
+    ctype_table(char const (&spaces)[N]): table() {
+        for (unsigned char c: spaces) {
+            table[c] = std::ctype_base::space;
+        }
+    }
+};
+struct ctype
+    : private ctype_table
+    , std::ctype<char>
+{
+    template <int N>
+    ctype(char const (&spaces)[N])
+        : ctype_table(spaces)
+        , std::ctype<char>(ctype_table::table)
+    {
+    }
+};
 
 bool MoveToPose(moveit::planning_interface::MoveGroup move_group_, const geometry_msgs::PoseStamped& target_pose, double eef_step)
 {
