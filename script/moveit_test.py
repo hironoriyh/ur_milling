@@ -23,7 +23,8 @@ def milling_paths():
 
     speed_move = 0.03
     speed_cut = 0.005
-    eef_step = 0.00002# for cartesian path ## somehow it's not accepting 0.00001
+    
+    eef_step = 0.01# for cartesian path ## somehow it's not accepting 0.00001
     print 'eef_step:' , eef_step
     side_cut_1 =  np.loadtxt('../data/brT/1_first_sidecut_T1.txt')*0.001
     print 'code: ', side_cut_1
@@ -39,7 +40,9 @@ def milling_paths():
     group.set_planning_time(10)
     group.set_planner_id('RRTkConfigDefault')
     group.allow_replanning(True)
-    group.set_goal_position_tolerance(0.01)
+    group.set_goal_position_tolerance(0.001)
+    group.set_max_acceleration_scaling_factor(0.01)
+
     print group.get_goal_tolerance()
     display_trajectory_publisher = rospy.Publisher(
                                     '/move_group/display_planned_path',
@@ -62,12 +65,12 @@ def milling_paths():
 
     print "============ move down"
     moveRelRotPt(group, side_cut_1[0], org_pose, speed_move)
-    # print 'length of text' , len(side_cut_1), len(side_cut_1)/8
-    # new_array = np.array_split(side_cut_1, len(side_cut_1)/8)
+    print 'length of text' , len(side_cut_1), len(side_cut_1)/8
+    new_array = np.array_split(side_cut_1, len(side_cut_1)/8)
 
     print "============ side cut"
-    # for points in new_array:
-    #     moveCartesianPath(group, points, org_pose, speed_cut, eef_step)
+    for points in new_array:
+        moveCartesianPath(group, points, org_pose, speed_cut, eef_step)
 #     for pt in  side_cut_1:
 #         moveRelRotPt(group, pt, org_pose, speed_cut)
     print "finished!"

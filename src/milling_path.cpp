@@ -140,6 +140,7 @@ int main(int argc, char **argv)
   std::cout << "size of points: " << poses.size() <<  std::endl;
 
   group.setMaxVelocityScalingFactor(0.001);
+  group.setMaxAccelerationScalingFactor(0.001);
 
   for(int i=0; i< poses.size(); i++){
     geometry_msgs::PoseStamped current_pose = group.getCurrentPose();
@@ -153,7 +154,7 @@ int main(int argc, char **argv)
     // Plan trajectory.
     moveit_msgs::RobotTrajectory trajectory;
     moveit_msgs::MoveItErrorCodes error_code;
-    double path_fraction = group.computeCartesianPath(waypoints, 0.00002, 0.0, trajectory, true, &error_code);
+    double path_fraction = group.computeCartesianPath(waypoints, 0.01, 0.0, trajectory, true, &error_code);
     if(path_fraction < 1.0) {
       ROS_WARN_STREAM("Could not calculate Cartesian Path.");
       return false;
@@ -163,7 +164,7 @@ int main(int argc, char **argv)
     robot_trajectory.setRobotTrajectoryMsg(rs, trajectory);
 
     trajectory_processing::IterativeParabolicTimeParameterization iptp;
-    iptp.computeTimeStamps(robot_trajectory, 1.0);
+    iptp.computeTimeStamps(robot_trajectory, 0.01);
     robot_trajectory.getRobotTrajectoryMsg(trajectory);
 
 //    moveit::planning_interface::MoveGroup::Plan my_plan;
