@@ -88,32 +88,14 @@ int main(int argc, char **argv)
   std::vector<double> group_variable_values;
   group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
 
-  group_variable_values= {0.4497567415237427, -1.8413293997394007, -1.5451634565936487, -2.9070408979998987, -1.8363669554339808, -3.1571934858905237};
+  group_variable_values= {0.46838808059692383, -1.8448813597308558, -1.5458701292621058, -2.9027331511126917, -1.8177936712848108, -3.156893793736593};
   group.setJointValueTarget(group_variable_values);
   bool success = group.plan(my_plan);
   ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
-
-  if (1)
-  {
-    ROS_INFO("Visualizing plan 1 (again)");
-    display_trajectory.trajectory_start = my_plan.start_state_;
-    display_trajectory.trajectory.push_back(my_plan.trajectory_);
-    display_publisher.publish(display_trajectory);
-    /* Sleep to give Rviz time to visualize the plan. */
-    sleep(1.0);
-  }
   group.execute(my_plan);
   sleep(1.0);
 
-  //------------------------ move up -------------------------
-  ROS_INFO("Move up");
-  geometry_msgs::Pose target_pose = group.getCurrentPose().pose;
-  target_pose.position.z += 0.05;
-  group.setPoseTarget(target_pose);
-  success = group.plan(my_plan);
-  group.move();
-  sleep(1.0);
-
+/////// get txt data
 
   std::string line;
   std::string ur_path = ros::package::getPath("ur3_milling") + "/data/test.txt";
@@ -139,6 +121,36 @@ int main(int argc, char **argv)
   std::cout << "size of string: " << mylines.size() <<  std::endl;
   std::cout << "size of points: " << poses.size() <<  std::endl;
 
+  //------------------------ move up -------------------------
+  ROS_INFO("Move up");
+  geometry_msgs::Pose target_pose = group.getCurrentPose().pose;
+  target_pose.position.z += 0.05;
+  group.setPoseTarget(target_pose);
+  success = group.plan(my_plan);
+  group.move();
+  sleep(1.0);
+
+  //// go to...
+  ROS_INFO("Move above the line");
+  geometry_msgs::Pose target_pose_2 = group.getCurrentPose().pose;
+  target_pose_2.position.x = poses[0].pose.position.x;
+  target_pose_2.position.y = poses[0].pose.position.y;
+  group.setPoseTarget(target_pose_2);
+  success = group.plan(my_plan);
+  group.move();
+  sleep(1.0);
+
+  //// go down
+  ROS_INFO("Move above the line");
+  geometry_msgs::Pose target_pose_3 = group.getCurrentPose().pose;
+  target_pose_3.position.z -= 0.05;
+   group.setPoseTarget(target_pose_3);
+   success = group.plan(my_plan);
+   group.move();
+   sleep(1.0);
+
+
+   //// trajectory move
   group.setMaxVelocityScalingFactor(0.001);
   group.setMaxAccelerationScalingFactor(0.001);
 
@@ -172,11 +184,6 @@ int main(int argc, char **argv)
     robot_state::robotStateToRobotStateMsg(*group.getCurrentState(), robot_state_msg);
 
     ROS_INFO_STREAM("joint trajectory size: " << trajectory.joint_trajectory.points.size() );
-//    trajectory.joint_trajectory.points[1].time_from_start = trajectory.joint_trajectory.points[0].time_from_start + ros::Duration(1.0);
-//    for(int j=0; j<trajectory.joint_trajectory.points.size() ; j++){
-//      ROS_INFO_STREAM("joint trajectory points: " << trajectory.joint_trajectory.points[j].positions[0]
-//                        << " time: "  << trajectory.joint_trajectory.points[j].time_from_start);
-//    }
 
     my_plan.trajectory_ = trajectory;
     my_plan.start_state_ = robot_state_msg;
@@ -191,11 +198,6 @@ int main(int argc, char **argv)
 
   ros::shutdown();
   return 0;
-}
-
-int test_(){
-  int x = 10;
-  return x;
 }
 
 bool MoveToPose(moveit::planning_interface::MoveGroup move_group_, const geometry_msgs::PoseStamped& target_pose, double eef_step)
