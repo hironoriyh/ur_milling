@@ -25,7 +25,7 @@ def milling_paths():
     speed_cut = 0.005
     eef_step = 0.00002# for cartesian path ## somehow it's not accepting 0.00001
     print 'eef_step:' , eef_step
-    side_cut_1 =  np.loadtxt('brT/1_first_sidecut_T1.txt')*0.001
+    side_cut_1 =  np.loadtxt('../data/brT/1_first_sidecut_T1.txt')*0.001
     print 'code: ', side_cut_1
     print "============ setup"
     moveit_commander.roscpp_initialize(sys.argv)
@@ -68,8 +68,8 @@ def milling_paths():
     print "============ side cut"
     # for points in new_array:
     #     moveCartesianPath(group, points, org_pose, speed_cut, eef_step)
-    for pt in  side_cut_1:
-        moveRelRotPt(group, pt, org_pose, speed_cut)
+#     for pt in  side_cut_1:
+#         moveRelRotPt(group, pt, org_pose, speed_cut)
     print "finished!"
 # def setio_callback(req):
 #     # req
