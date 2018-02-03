@@ -75,29 +75,34 @@ int main(int argc, char **argv)
 
   ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
   ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
-
+//  group.setPoseReferenceFrame("base");
   moveit::planning_interface::MoveGroup::Plan my_plan;
   ros::Publisher target_pose_publisher_ = node_handle.advertise<geometry_msgs::PoseStamped>("/move_pose", 1, true);
   // target_pose_publisher_.publish(target_poses.back());
 
   group.setMaxVelocityScalingFactor(0.05);
   group.setPlannerId("RRTConnectkConfigDefault");
-  group.setPlanningTime(5);
+  group.setPlanningTime(10);
   group.setNumPlanningAttempts(10);
 
 
+  bool success;
+  robot_state::RobotState rs = *group.getCurrentState();
 
   ////// move to the origin
   std::vector<double> group_variable_values;
   group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
-//  ROS_INFO_STREAM("joint state: " << group_variable_values);
-  group_variable_values=   {3.0930979251861572, -2.419953171406881, -1.7331531683551233, 0.6888095140457153, 0.11696866154670715, -5.924867455159323};
-  group.setJointValueTarget(group_variable_values);
-  bool success = group.plan(my_plan);
-  ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
+  std::cout << "current joint state: " ;
+  for(int i =0; i < 6; i++) std::cout << group_variable_values[i] << " , ";
+  std::cout << std::endl;
+//  group_variable_values= {3.016080856323242, -1.8702605406390589, -1.4699929396258753, -2.9455812613116663, -1.3899205366717737, -3.1732919851886194};
+//  group_variable_values= {3.0930979251861572, -2.419953171406881, -1.7331531683551233, 0.6888095140457153, 0.11696866154670715, -5.924867455159323};
+//  group_variable_values= {2.9627315998077393, -2.381552044545309, -1.4687355200396937, 0.6916583776473999, 0.2369307577610016, -6.32032264072636};
+//  group.setJointValueTarget(group_variable_values);
+//  success = group.plan(my_plan);
+//  ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
 //  group.execute(my_plan);
-  group.move();
-  sleep(1.0);
+//  sleep(1.0);
 
 /////// get txt data
 
@@ -111,43 +116,65 @@ int main(int argc, char **argv)
   {
     if (line.empty()) {
       std::cout << "Empty line." << std::endl;
-      continue;
+//      break;
+//      continue;
+    } else {
+
+      //    ROS_INFO_STREAM("line: " << line);
+      typedef std::vector<std::string> Tokens;
+      Tokens tokens;
+      boost::split(tokens, line, boost::is_any_of(" "));
+      if (line.size() < 2) {
+        std::cout << "size is too short: " << line.size() << std::endl;
+//        break;
+      } else {
+        std::string::size_type sz;
+        geometry_msgs::PoseStamped pose = group.getCurrentPose();
+        pose.pose.position.x -= std::stod(tokens[0], &sz) * 0.001;
+        pose.pose.position.y -= std::stod(tokens[1], &sz) * 0.001;
+        pose.pose.position.z += std::stod(tokens[2], &sz) * 0.001;
+        //    ROS_INFO_STREAM("position: " << pose.pose.position.x << " , " <<pose.pose.position.y << " , " <<pose.pose.position.z);
+        poses.push_back(pose);
+      }
     }
-    typedef std::vector<std::string> Tokens;
-    Tokens tokens;
-    boost::split( tokens, line, boost::is_any_of(" ") );
-    std::string::size_type sz;
-    geometry_msgs::PoseStamped pose = group.getCurrentPose();
-    pose.pose.position.x += std::stod(tokens[0], &sz)*0.001;
-    pose.pose.position.y += std::stod(tokens[1], &sz)*0.001;
-    pose.pose.position.z += std::stod(tokens[2], &sz)*0.001;
-    ROS_INFO_STREAM("position: \n" << pose.pose.position);
   }
   std::cout << "size of points: " << poses.size() <<  std::endl;
+  sleep(1.0);
 
   //------------------------ move up -------------------------
   ROS_INFO("Move up");
+  rs = *group.getCurrentState();
+   group.setStartState(rs);
   geometry_msgs::Pose target_pose = group.getCurrentPose().pose;
-  target_pose.position.z += 0.05;
+  ROS_INFO_STREAM("current pos : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
+  target_pose.position.z =  target_pose.position.z + 0.03;
   group.setPoseTarget(target_pose);
+  ROS_INFO_STREAM("goto : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
+
   success = group.plan(my_plan);
   group.move();
   sleep(1.0);
 
   //// go to...
   ROS_INFO("Move above the line");
+  rs = *group.getCurrentState();
+   group.setStartState(rs);
   geometry_msgs::Pose target_pose_2 = group.getCurrentPose().pose;
+  ROS_INFO_STREAM("current pos : " << target_pose_2.position.x << " , " << target_pose_2.position.y);
   target_pose_2.position.x = poses[0].pose.position.x;
-  target_pose_2.position.y = poses[1].pose.position.y;
+  target_pose_2.position.y = poses[0].pose.position.y;
+  ROS_INFO_STREAM("goto : " << target_pose_2.position.x << " , " << target_pose_2.position.y);
   group.setPoseTarget(target_pose_2);
   success = group.plan(my_plan);
   group.move();
   sleep(1.0);
 
   //// go down
-  ROS_INFO("Move above the line");
+  ROS_INFO("Move down");
+  rs = *group.getCurrentState();
+   group.setStartState(rs);
   geometry_msgs::Pose target_pose_3 = group.getCurrentPose().pose;
-  target_pose_3.position.z -= 0.05;
+  target_pose_3.position.z  = target_pose.position.z-  0.03;
    group.setPoseTarget(target_pose_3);
    success = group.plan(my_plan);
    group.move();
@@ -164,7 +191,7 @@ int main(int argc, char **argv)
     waypoints.push_back(current_pose.pose);
     waypoints.push_back(poses[i].pose);
 
-    robot_state::RobotState rs = *group.getCurrentState();
+    rs = *group.getCurrentState();
     group.setStartState(rs);
 
     // Plan trajectory.
@@ -188,9 +215,9 @@ int main(int argc, char **argv)
     robot_state::robotStateToRobotStateMsg(*group.getCurrentState(), robot_state_msg);
 
     ROS_INFO_STREAM("goto: " << poses[i].pose.position.x
-                    << poses[i].pose.position.y
-                    << poses[i].pose.position.z <<
-                    ",  point num: " << trajectory.joint_trajectory.points.size() );
+                    << " , " << poses[i].pose.position.y
+                    << " , " << poses[i].pose.position.z
+                    << " ,  point num: " << trajectory.joint_trajectory.points.size() );
 
     my_plan.trajectory_ = trajectory;
     my_plan.start_state_ = robot_state_msg;
