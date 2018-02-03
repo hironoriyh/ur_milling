@@ -56,7 +56,6 @@
 
 #include <ros/package.h>
 
-
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "milling_path");
@@ -64,45 +63,51 @@ int main(int argc, char **argv)
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
-
   /* This sleep is ONLY to allow Rviz to come up */
   moveit::planning_interface::MoveGroup group("manipulator");
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
   // (Optional) Create a publisher for visualizing plans in Rviz.
-  ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
+  ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>(
+      "/move_group/display_planned_path", 1, true);
   moveit_msgs::DisplayTrajectory display_trajectory;
 
   ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
   ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
 //  group.setPoseReferenceFrame("base");
   moveit::planning_interface::MoveGroup::Plan my_plan;
-  ros::Publisher target_pose_publisher_ = node_handle.advertise<geometry_msgs::PoseStamped>("/move_pose", 1, true);
+  ros::Publisher target_pose_publisher_ = node_handle.advertise<geometry_msgs::PoseStamped>(
+      "/move_pose", 1, true);
   // target_pose_publisher_.publish(target_poses.back());
 
   group.setMaxVelocityScalingFactor(0.05);
+  group.setMaxAccelerationScalingFactor(0.2);
+
   group.setPlannerId("RRTConnectkConfigDefault");
   group.setPlanningTime(10);
   group.setNumPlanningAttempts(10);
-
 
   bool success;
   robot_state::RobotState rs = *group.getCurrentState();
 
   ////// move to the origin
   std::vector<double> group_variable_values;
-  group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
-  std::cout << "current joint state: " ;
-  for(int i =0; i < 6; i++) std::cout << group_variable_values[i] << " , ";
+  group.getCurrentState()->copyJointGroupPositions(
+      group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()),
+      group_variable_values);
+  std::cout << "current joint state: ";
+  for (int i = 0; i < 6; i++)
+    std::cout << group_variable_values[i] << " , ";
   std::cout << std::endl;
-//  group_variable_values= {3.016080856323242, -1.8702605406390589, -1.4699929396258753, -2.9455812613116663, -1.3899205366717737, -3.1732919851886194};
-//  group_variable_values= {3.0930979251861572, -2.419953171406881, -1.7331531683551233, 0.6888095140457153, 0.11696866154670715, -5.924867455159323};
-//  group_variable_values= {2.9627315998077393, -2.381552044545309, -1.4687355200396937, 0.6916583776473999, 0.2369307577610016, -6.32032264072636};
-//  group.setJointValueTarget(group_variable_values);
-//  success = group.plan(my_plan);
-//  ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
-//  group.execute(my_plan);
-//  sleep(1.0);
+
+  group_variable_values= {
+   3.14674 , -1.92604 , -1.42526 , -2.91299 , -1.10208 , -3.1556
+  };
+  group.setJointValueTarget(group_variable_values);
+  success = group.plan(my_plan);
+  if(!success) return 0;
+  group.execute(my_plan);
+  sleep(1.0);
 
 /////// get txt data
 
@@ -115,8 +120,7 @@ int main(int argc, char **argv)
   while (std::getline(infile, line))  // To get you all the lines.
   {
     if (line.empty()) {
-      std::cout << "Empty line." << std::endl;
-//      break;
+//      std::cout << "Empty line." << std::endl;
 //      continue;
     } else {
 
@@ -126,7 +130,6 @@ int main(int argc, char **argv)
       boost::split(tokens, line, boost::is_any_of(" "));
       if (line.size() < 2) {
         std::cout << "size is too short: " << line.size() << std::endl;
-//        break;
       } else {
         std::string::size_type sz;
         geometry_msgs::PoseStamped pose = group.getCurrentPose();
@@ -138,54 +141,57 @@ int main(int argc, char **argv)
       }
     }
   }
-  std::cout << "size of points: " << poses.size() <<  std::endl;
+  std::cout << "size of points: " << poses.size() << std::endl;
   sleep(1.0);
 
   //------------------------ move up -------------------------
   ROS_INFO("Move up");
   rs = *group.getCurrentState();
-   group.setStartState(rs);
+  group.setStartState(rs);
   geometry_msgs::Pose target_pose = group.getCurrentPose().pose;
-  ROS_INFO_STREAM("current pos : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
-  target_pose.position.z =  target_pose.position.z + 0.03;
+  ROS_INFO_STREAM(
+      "current pos : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
+  target_pose.position.z = target_pose.position.z + 0.03;
   group.setPoseTarget(target_pose);
-  ROS_INFO_STREAM("goto : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
+  ROS_INFO_STREAM(
+      "goto : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
 
   success = group.plan(my_plan);
+  if(!success) return 0;
   group.move();
   sleep(1.0);
 
   //// go to...
   ROS_INFO("Move above the line");
-  rs = *group.getCurrentState();
-   group.setStartState(rs);
   geometry_msgs::Pose target_pose_2 = group.getCurrentPose().pose;
-  ROS_INFO_STREAM("current pos : " << target_pose_2.position.x << " , " << target_pose_2.position.y);
+  ROS_INFO_STREAM(
+      "current pos : " << target_pose_2.position.x << " , " << target_pose_2.position.y);
   target_pose_2.position.x = poses[0].pose.position.x;
   target_pose_2.position.y = poses[0].pose.position.y;
   ROS_INFO_STREAM("goto : " << target_pose_2.position.x << " , " << target_pose_2.position.y);
   group.setPoseTarget(target_pose_2);
   success = group.plan(my_plan);
+  if(!success) return 0;
+
   group.move();
   sleep(1.0);
 
   //// go down
   ROS_INFO("Move down");
-  rs = *group.getCurrentState();
-   group.setStartState(rs);
   geometry_msgs::Pose target_pose_3 = group.getCurrentPose().pose;
-  target_pose_3.position.z  = target_pose.position.z-  0.03;
-   group.setPoseTarget(target_pose_3);
-   success = group.plan(my_plan);
-   group.move();
-   sleep(1.0);
+  target_pose_3.position.z = target_pose.position.z - 0.03;
+  group.setPoseTarget(target_pose_3);
+  success = group.plan(my_plan);
+  if(!success) return 0;
 
+  group.move();
+  sleep(1.0);
 
-   //// trajectory move
+  //// trajectory move
   group.setMaxVelocityScalingFactor(0.001);
   group.setMaxAccelerationScalingFactor(0.001);
 
-  for(int i=0; i< poses.size(); i++){
+  for (int i = 0; i < poses.size(); i++) {
     geometry_msgs::PoseStamped current_pose = group.getCurrentPose();
     std::vector<geometry_msgs::Pose> waypoints;
     waypoints.push_back(current_pose.pose);
@@ -197,8 +203,9 @@ int main(int argc, char **argv)
     // Plan trajectory.
     moveit_msgs::RobotTrajectory trajectory;
     moveit_msgs::MoveItErrorCodes error_code;
-    double path_fraction = group.computeCartesianPath(waypoints, 0.01, 0.0, trajectory, true, &error_code);
-    if(path_fraction < 1.0) {
+    double path_fraction = group.computeCartesianPath(waypoints, 0.01, 0.0, trajectory, true,
+                                                      &error_code);
+    if (path_fraction < 1.0) {
       ROS_WARN_STREAM("Could not calculate Cartesian Path.");
       return false;
     }
@@ -214,18 +221,18 @@ int main(int argc, char **argv)
     moveit_msgs::RobotState robot_state_msg;
     robot_state::robotStateToRobotStateMsg(*group.getCurrentState(), robot_state_msg);
 
-    ROS_INFO_STREAM("goto: " << poses[i].pose.position.x
-                    << " , " << poses[i].pose.position.y
-                    << " , " << poses[i].pose.position.z
-                    << " ,  point num: " << trajectory.joint_trajectory.points.size() );
+    ROS_INFO_STREAM(
+        "goto: " << poses[i].pose.position.x << " , " << poses[i].pose.position.y << " , " << poses[i].pose.position.z << " ,  point num: " << trajectory.joint_trajectory.points.size());
 
     my_plan.trajectory_ = trajectory;
     my_plan.start_state_ = robot_state_msg;
 
     // removing points with velocity zero
     my_plan.trajectory_.joint_trajectory.points.erase(
-        std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1, my_plan.trajectory_.joint_trajectory.points.end(), [](const trajectory_msgs::JointTrajectoryPoint & p)
-        { return p.time_from_start.toSec() == 0;}),
+        std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1,
+                       my_plan.trajectory_.joint_trajectory.points.end(),
+                       [](const trajectory_msgs::JointTrajectoryPoint & p)
+                       { return p.time_from_start.toSec() == 0;}),
         my_plan.trajectory_.joint_trajectory.points.end());
     group.execute(my_plan);
   }
@@ -234,7 +241,8 @@ int main(int argc, char **argv)
   return 0;
 }
 
-bool MoveToPose(moveit::planning_interface::MoveGroup move_group_, const geometry_msgs::PoseStamped& target_pose, double eef_step)
+bool MoveToPose(moveit::planning_interface::MoveGroup move_group_,
+                const geometry_msgs::PoseStamped& target_pose, double eef_step)
 {
 
   // approaching_pose_publisher_.publish(target_pose);
@@ -249,8 +257,9 @@ bool MoveToPose(moveit::planning_interface::MoveGroup move_group_, const geometr
   // Plan trajectory.
   moveit_msgs::RobotTrajectory trajectory;
   moveit_msgs::MoveItErrorCodes error_code;
-  double path_fraction = move_group_.computeCartesianPath(waypoints, eef_step, 0.0, trajectory, true, &error_code);
-  if(path_fraction < 1.0) {
+  double path_fraction = move_group_.computeCartesianPath(waypoints, eef_step, 0.0, trajectory,
+                                                          true, &error_code);
+  if (path_fraction < 1.0) {
     ROS_WARN_STREAM("GraspObject: Could not calculate Cartesian Path.");
     return false;
   }
@@ -271,8 +280,10 @@ bool MoveToPose(moveit::planning_interface::MoveGroup move_group_, const geometr
 
   // removing points with velocity zero
   my_plan.trajectory_.joint_trajectory.points.erase(
-      std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1, my_plan.trajectory_.joint_trajectory.points.end(), [](const trajectory_msgs::JointTrajectoryPoint & p)
-      { return p.time_from_start.toSec() == 0;}),
+      std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1,
+                     my_plan.trajectory_.joint_trajectory.points.end(),
+                     [](const trajectory_msgs::JointTrajectoryPoint & p)
+                     { return p.time_from_start.toSec() == 0;}),
       my_plan.trajectory_.joint_trajectory.points.end());
 
   // check the joint 6 rotation:
@@ -291,7 +302,8 @@ bool MoveToPoses(moveit::planning_interface::MoveGroup move_group_,
   geometry_msgs::PoseStamped current_pose = move_group_.getCurrentPose();
   std::vector<geometry_msgs::Pose> waypoints;
   waypoints.push_back(current_pose.pose);
-  for(auto pt : target_poses) waypoints.push_back(pt.pose);
+  for (auto pt : target_poses)
+    waypoints.push_back(pt.pose);
 
   robot_state::RobotState rs = *move_group_.getCurrentState();
   move_group_.setStartState(rs);
@@ -299,8 +311,9 @@ bool MoveToPoses(moveit::planning_interface::MoveGroup move_group_,
   // Plan trajectory.
   moveit_msgs::RobotTrajectory trajectory;
   moveit_msgs::MoveItErrorCodes error_code;
-  double path_fraction = move_group_.computeCartesianPath(waypoints, 0.03, 0.0, trajectory, true, &error_code);
-  if(path_fraction < 1.0) {
+  double path_fraction = move_group_.computeCartesianPath(waypoints, 0.03, 0.0, trajectory, true,
+                                                          &error_code);
+  if (path_fraction < 1.0) {
     ROS_WARN_STREAM("PlacesObject: Could not calculate Cartesian Path.");
     return false;
   }
@@ -319,16 +332,19 @@ bool MoveToPoses(moveit::planning_interface::MoveGroup move_group_,
   my_plan.trajectory_ = trajectory;
   my_plan.start_state_ = robot_state_msg;
 
-
   // removing points with velocity zero
   my_plan.trajectory_.joint_trajectory.points.erase(
-      std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1, my_plan.trajectory_.joint_trajectory.points.end(), [](const trajectory_msgs::JointTrajectoryPoint & p)
-      { return p.time_from_start.toSec() == 0;}),
+      std::remove_if(my_plan.trajectory_.joint_trajectory.points.begin() + 1,
+                     my_plan.trajectory_.joint_trajectory.points.end(),
+                     [](const trajectory_msgs::JointTrajectoryPoint & p)
+                     { return p.time_from_start.toSec() == 0;}),
       my_plan.trajectory_.joint_trajectory.points.end());
 
   // check the joint 6 rotation:
-  double diff_joint_6 =  my_plan.trajectory_.joint_trajectory.points.back().positions[5] - my_plan.trajectory_.joint_trajectory.points[0].positions[5];
-  if(diff_joint_6 > M_PI_2) ROS_WARN_STREAM( "joint 6 diff: " << diff_joint_6 );
+  double diff_joint_6 = my_plan.trajectory_.joint_trajectory.points.back().positions[5]
+      - my_plan.trajectory_.joint_trajectory.points[0].positions[5];
+  if (diff_joint_6 > M_PI_2)
+    ROS_WARN_STREAM("joint 6 diff: " << diff_joint_6);
 
   move_group_.setPlanningTime(60);
   move_group_.execute(my_plan);
