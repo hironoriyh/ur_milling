@@ -89,6 +89,7 @@ int main(int argc, char **argv)
 
   bool success;
   robot_state::RobotState rs = *group.getCurrentState();
+  double moving_up_down = 0.02;
 
   ////// move to the origin
   std::vector<double> group_variable_values;
@@ -100,14 +101,14 @@ int main(int argc, char **argv)
     std::cout << group_variable_values[i] << " , ";
   std::cout << std::endl;
 
-  group_variable_values= {
-   3.14674 , -1.92604 , -1.42526 , -2.91299 , -1.10208 , -3.1556
-  };
-  group.setJointValueTarget(group_variable_values);
-  success = group.plan(my_plan);
-  if(!success) return 0;
-  group.execute(my_plan);
-  sleep(1.0);
+//  group_variable_values= {
+//   3.14674 , -1.92604 , -1.42526 , -2.91299 , -1.10208 , -3.1556
+//  };
+//  group.setJointValueTarget(group_variable_values);
+//  success = group.plan(my_plan);
+//  if(!success) return 0;
+//  group.execute(my_plan);
+//  sleep(1.0);
 
 /////// get txt data
 
@@ -123,14 +124,14 @@ int main(int argc, char **argv)
 //      std::cout << "Empty line." << std::endl;
 //      continue;
     } else {
-
       //    ROS_INFO_STREAM("line: " << line);
       typedef std::vector<std::string> Tokens;
       Tokens tokens;
       boost::split(tokens, line, boost::is_any_of(" "));
+
       if (line.size() < 2) {
-        std::cout << "size is too short: " << line.size() << std::endl;
-      } else {
+        // std::cout << "reject: " << line.size() << std::endl;
+        } else {
         std::string::size_type sz;
         geometry_msgs::PoseStamped pose = group.getCurrentPose();
         pose.pose.position.x -= std::stod(tokens[0], &sz) * 0.001;
@@ -138,6 +139,7 @@ int main(int argc, char **argv)
         pose.pose.position.z += std::stod(tokens[2], &sz) * 0.001;
         //    ROS_INFO_STREAM("position: " << pose.pose.position.x << " , " <<pose.pose.position.y << " , " <<pose.pose.position.z);
         poses.push_back(pose);
+        // std::cout << "accept: " << line.size() << std::endl;
       }
     }
   }
@@ -151,7 +153,7 @@ int main(int argc, char **argv)
   geometry_msgs::Pose target_pose = group.getCurrentPose().pose;
   ROS_INFO_STREAM(
       "current pos : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
-  target_pose.position.z = target_pose.position.z + 0.03;
+  target_pose.position.z = target_pose.position.z + moving_up_down;
   group.setPoseTarget(target_pose);
   ROS_INFO_STREAM(
       "goto : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
@@ -179,7 +181,7 @@ int main(int argc, char **argv)
   //// go down
   ROS_INFO("Move down");
   geometry_msgs::Pose target_pose_3 = group.getCurrentPose().pose;
-  target_pose_3.position.z = target_pose.position.z - 0.03;
+  target_pose_3.position.z = poses[0].pose.position.z;
   group.setPoseTarget(target_pose_3);
   success = group.plan(my_plan);
   if(!success) return 0;
@@ -234,6 +236,10 @@ int main(int argc, char **argv)
                        [](const trajectory_msgs::JointTrajectoryPoint & p)
                        { return p.time_from_start.toSec() == 0;}),
         my_plan.trajectory_.joint_trajectory.points.end());
+
+    // success = group.plan(my_plan);
+    // if(!success) return 0;
+
     group.execute(my_plan);
   }
 

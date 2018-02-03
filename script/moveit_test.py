@@ -23,7 +23,7 @@ def milling_paths():
 
     speed_move = 0.03
     speed_cut = 0.005
-    
+
     eef_step = 0.01# for cartesian path ## somehow it's not accepting 0.00001
     print 'eef_step:' , eef_step
     side_cut_1 =  np.loadtxt('../data/brT/1_first_sidecut_T1.txt')*0.001
@@ -48,26 +48,31 @@ def milling_paths():
                                     '/move_group/display_planned_path',
                                     moveit_msgs.msg.DisplayTrajectory,
                                     queue_size=20)
-
     print "current joint values:  ", group.get_current_joint_values()
-#     group_variable_values = [1.3005793730365198, -1.5097087065326136, 2.061824321746826, -0.6882427374469202, 0.7648665904998779, 15.805911668131145]
-#     moveJoint(group, group_variable_values, speed_move)
+
+    print "============ Going up"
+    org_pose = group.get_current_pose().pose
+    print " org pos: " , org_pose
+    moveRelativePt(group, [0.0, 0.0, 0.03], speed_move)
+
+    group_variable_values = [2.3093762397766113, -1.7693746725665491, -1.8548067251788538, -2.673811737691061, -1.6691063086139124, -3.1361997763263147]
+    moveJoint(group, group_variable_values, speed_move)
 #     print "============ Going up"
 #     org_pose = group.get_current_pose().pose
 #     print " org pos: " , org_pose
 #     moveRelativePt(group, [0.0, 0.0, 0.05], speed_move)
- 
+
 #     print "============ move above"
 #     # side_cut_1 =  np.loadtxt('brT/1_first_sidecut_T1.txt')*0.001
 #     point_up = [side_cut_1[0][0], side_cut_1[0][1], 0.0] # x, y is swapped
 #     moveRelRotPt(group, point_up, org_pose, speed_move)
 #     rospy.sleep(1.0)
-# 
+#
 #     print "============ move down"
 #     moveRelRotPt(group, side_cut_1[0], org_pose, speed_move)
 #     print 'length of text' , len(side_cut_1), len(side_cut_1)/8
 #     new_array = np.array_split(side_cut_1, len(side_cut_1)/8)
-# 
+#
 #     print "============ side cut"
 #     for points in new_array:
 #         moveCartesianPath(group, points, org_pose, speed_cut, eef_step)
