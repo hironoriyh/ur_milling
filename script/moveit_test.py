@@ -50,27 +50,27 @@ def milling_paths():
                                     queue_size=20)
 
     print "current joint values:  ", group.get_current_joint_values()
-    group_variable_values = [0.4497567415237427, -1.8413293997394007, -1.5451634565936487, -2.9070408979998987, -1.8363669554339808, -3.1571934858905237]
-    moveJoint(group, group_variable_values, speed_move)
-    print "============ Going up"
-    org_pose = group.get_current_pose().pose
-    print " org pos: " , org_pose
-    moveRelativePt(group, [0.0, 0.0, 0.05], speed_move)
-
-    print "============ move above"
-    # side_cut_1 =  np.loadtxt('brT/1_first_sidecut_T1.txt')*0.001
-    point_up = [side_cut_1[0][0], side_cut_1[0][1], 0.0] # x, y is swapped
-    moveRelRotPt(group, point_up, org_pose, speed_move)
-    rospy.sleep(1.0)
-
-    print "============ move down"
-    moveRelRotPt(group, side_cut_1[0], org_pose, speed_move)
-    print 'length of text' , len(side_cut_1), len(side_cut_1)/8
-    new_array = np.array_split(side_cut_1, len(side_cut_1)/8)
-
-    print "============ side cut"
-    for points in new_array:
-        moveCartesianPath(group, points, org_pose, speed_cut, eef_step)
+#     group_variable_values = [1.3005793730365198, -1.5097087065326136, 2.061824321746826, -0.6882427374469202, 0.7648665904998779, 15.805911668131145]
+#     moveJoint(group, group_variable_values, speed_move)
+#     print "============ Going up"
+#     org_pose = group.get_current_pose().pose
+#     print " org pos: " , org_pose
+#     moveRelativePt(group, [0.0, 0.0, 0.05], speed_move)
+ 
+#     print "============ move above"
+#     # side_cut_1 =  np.loadtxt('brT/1_first_sidecut_T1.txt')*0.001
+#     point_up = [side_cut_1[0][0], side_cut_1[0][1], 0.0] # x, y is swapped
+#     moveRelRotPt(group, point_up, org_pose, speed_move)
+#     rospy.sleep(1.0)
+# 
+#     print "============ move down"
+#     moveRelRotPt(group, side_cut_1[0], org_pose, speed_move)
+#     print 'length of text' , len(side_cut_1), len(side_cut_1)/8
+#     new_array = np.array_split(side_cut_1, len(side_cut_1)/8)
+# 
+#     print "============ side cut"
+#     for points in new_array:
+#         moveCartesianPath(group, points, org_pose, speed_cut, eef_step)
 #     for pt in  side_cut_1:
 #         moveRelRotPt(group, pt, org_pose, speed_cut)
     print "finished!"

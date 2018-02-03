@@ -85,14 +85,18 @@ int main(int argc, char **argv)
   group.setPlanningTime(5);
   group.setNumPlanningAttempts(10);
 
+
+
+  ////// move to the origin
   std::vector<double> group_variable_values;
   group.getCurrentState()->copyJointGroupPositions(group.getCurrentState()->getRobotModel()->getJointModelGroup(group.getName()), group_variable_values);
-
-  group_variable_values= {0.46838808059692383, -1.8448813597308558, -1.5458701292621058, -2.9027331511126917, -1.8177936712848108, -3.156893793736593};
+//  ROS_INFO_STREAM("joint state: " << group_variable_values);
+  group_variable_values=   {3.0930979251861572, -2.419953171406881, -1.7331531683551233, 0.6888095140457153, 0.11696866154670715, -5.924867455159323};
   group.setJointValueTarget(group_variable_values);
   bool success = group.plan(my_plan);
   ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
-  group.execute(my_plan);
+//  group.execute(my_plan);
+  group.move();
   sleep(1.0);
 
 /////// get txt data
@@ -102,23 +106,23 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM("ur_path: " << ur_path);
   std::ifstream infile(ur_path);
 
-  std::vector<std::string> mylines;
   std::vector<geometry_msgs::PoseStamped> poses;
   while (std::getline(infile, line))  // To get you all the lines.
   {
-    mylines.push_back(line);
-//    std::cout<< count << " line: " <<  line << std::endl;
+    if (line.empty()) {
+      std::cout << "Empty line." << std::endl;
+      continue;
+    }
     typedef std::vector<std::string> Tokens;
     Tokens tokens;
     boost::split( tokens, line, boost::is_any_of(" ") );
     std::string::size_type sz;
     geometry_msgs::PoseStamped pose = group.getCurrentPose();
-    pose.pose.position.x -= std::stod(tokens[1], &sz)*0.001;
-    pose.pose.position.y += std::stod(tokens[0], &sz)*0.001;
+    pose.pose.position.x += std::stod(tokens[0], &sz)*0.001;
+    pose.pose.position.y += std::stod(tokens[1], &sz)*0.001;
     pose.pose.position.z += std::stod(tokens[2], &sz)*0.001;
-    poses.push_back(pose);
+    ROS_INFO_STREAM("position: \n" << pose.pose.position);
   }
-  std::cout << "size of string: " << mylines.size() <<  std::endl;
   std::cout << "size of points: " << poses.size() <<  std::endl;
 
   //------------------------ move up -------------------------
@@ -134,7 +138,7 @@ int main(int argc, char **argv)
   ROS_INFO("Move above the line");
   geometry_msgs::Pose target_pose_2 = group.getCurrentPose().pose;
   target_pose_2.position.x = poses[0].pose.position.x;
-  target_pose_2.position.y = poses[0].pose.position.y;
+  target_pose_2.position.y = poses[1].pose.position.y;
   group.setPoseTarget(target_pose_2);
   success = group.plan(my_plan);
   group.move();
@@ -183,7 +187,10 @@ int main(int argc, char **argv)
     moveit_msgs::RobotState robot_state_msg;
     robot_state::robotStateToRobotStateMsg(*group.getCurrentState(), robot_state_msg);
 
-    ROS_INFO_STREAM("joint trajectory size: " << trajectory.joint_trajectory.points.size() );
+    ROS_INFO_STREAM("goto: " << poses[i].pose.position.x
+                    << poses[i].pose.position.y
+                    << poses[i].pose.position.z <<
+                    ",  point num: " << trajectory.joint_trajectory.points.size() );
 
     my_plan.trajectory_ = trajectory;
     my_plan.start_state_ = robot_state_msg;
