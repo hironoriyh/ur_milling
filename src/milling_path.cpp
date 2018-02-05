@@ -261,6 +261,16 @@ int main(int argc, char **argv)
     group.execute(my_plan);
   }
 
+
+  srv.request.state = 0.0;
+  if(client.call(srv)){
+    ROS_INFO("success!");
+  }
+  else {
+    ROS_ERROR("failed to call srv");
+    return 1;
+  }
+
   ros::shutdown();
   return 0;
 }

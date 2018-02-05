@@ -52,11 +52,9 @@ private:
    */
   bool ReadParameters();
 
-  /*!
-   * Load stacking configuration from file.
-   * @return true if successful.
-   */
   bool LoadStackingConfiguration();
+
+  bool ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
   // bool DetectObject(std::vector<Object>& models_to_detect);
 
