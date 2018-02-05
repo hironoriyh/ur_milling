@@ -7,26 +7,23 @@
 
 #include <ur3_milling/MillingPath.hpp>
 
-// #include <ur3_milling/GraspObject.hpp>
-// #include <ur3_milling/PlaceObject.hpp>
-
-#include <object_detection/DetectObject.h>
-#include <object_detection/LocaliseObjects.h>
+//#include <object_detection/DetectObject.h>
+//#include <object_detection/LocaliseObjects.h>
 
 #include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <geometric_shapes/shapes.h>
-#include <geometric_shapes/mesh_operations.h>
-#include <geometric_shapes/shape_operations.h>
-#include <shape_msgs/Mesh.h>
-#include <geometric_shapes/shape_messages.h>
-#include <moveit_msgs/GetStateValidity.h>
-#include <moveit/robot_state/conversions.h>
 
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
+#include <moveit/robot_state/conversions.h>
 
+#include <ur_msgs/SetIO.h>
+
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <locale>
+#include <string>
 
 namespace ur3_milling {
 
@@ -43,60 +40,81 @@ MillingPath::MillingPath(ros::NodeHandle& nh)
 
   // Set moveit interface
   move_group_.reset(new moveit::planning_interface::MoveGroup("manipulator"));
-  move_group_->setMaxVelocityScalingFactor(velocity_scaling_);
+  move_group_->setMaxVelocityScalingFactor(velocity_high_);
+  move_group_->setMaxAccelerationScalingFactor(max_acceleration_);
   move_group_->setPlannerId("RRTConnectkConfigDefault");
   move_group_->setPlanningTime(10);
   move_group_->setNumPlanningAttempts(10);
+  rs_ = move_group_->getCurrentState();
+
 
   // Set planning scene interface.
   planning_scene_.reset(new moveit::planning_interface::PlanningSceneInterface());
 
-  std::vector<double> group_variable_values;
-  move_group_->getCurrentState()->copyJointGroupPositions(move_group_->getCurrentState()->getRobotModel()->getJointModelGroup(move_group_->getName()), group_variable_values);
-  move_group_->setJointValueTarget(group_variable_values);
- //  bool success = move_group_->plan(my_plan);
-//   ROS_INFO("Visualizing plan 2 (joint space goal) %s",success?"":"FAILED");
+  ////// move to the origin
+  vector<double> group_variable_values;
+  rs_->copyJointGroupPositions(rs_->getRobotModel()->
+                              getJointModelGroup(move_group_->getName()),  group_variable_values);
 
+  std::cout << "current joint state: ";
+  for (int i = 0; i < 6; i++)
+    std::cout << group_variable_values[i] << " , ";
+  std::cout << std::endl;
 
+  execute_milling_server_ = nh_.advertiseService("execute_milling", &MillingPath::ExecuteMillingCB, this);
 }
 
 MillingPath::~MillingPath()
 {
 }
 
-//bool MillinPath::
-
 bool MillingPath::ReadParameters()
 {
-  // nh_.getParam("/serial_stacking/velocity_scaling", velocity_scaling_);
-  // nh_.getParam("/serial_stacking/camera_frame", camera_frame_);
-  // nh_.getParam("/serial_stacking/distance_to_objects", distance_to_objects_);
-  // nh_.getParam("/serial_stacking/allowed_position_deviation", position_diff_);
-  // nh_.getParam("/serial_stacking/allowed_rotation_deviation", rotation_diff_);
-  //
-  // nh_.getParam("/serial_stacking/min_localization_x", min_localization_.x());
-  // nh_.getParam("/serial_stacking/min_localization_y", min_localization_.y());
-  // nh_.getParam("/serial_stacking/min_localization_z", min_localization_.z());
-  // nh_.getParam("/serial_stacking/max_localization_x", max_localization_.x());
-  // nh_.getParam("/serial_stacking/max_localization_y", max_localization_.y());
-  // nh_.getParam("/serial_stacking/max_localization_z", max_localization_.z());
+   nh_.getParam("/milling_path/velocity_high", velocity_high_);
+   nh_.getParam("/milling_path/camera_frame", camera_frame_);
+   nh_.getParam("/milling_path/distance_to_object", distance_to_object_);
+   nh_.getParam("/milling_path/eef_step", eef_step_);
+   nh_.getParam("/milling_path/velocity_cut", velocity_cut_);
+   nh_.getParam("/milling_path/max_acceleration", max_acceleration_);
 
   return true;
 }
 
-bool MillingPath::LoadStackingConfiguration()
+bool MillingPath::LoadMillingPath()
 {
-  // desired_stacking_configuration_.clear();
-  // // Load stacking configuration.
-  // std::string path = ros::package::getPath("ur3_milling");
-  // path = path + "/config/stacking_configuration_serial.yaml";
-  // std::string commandString = "rosparam load " + path + " /serial_stacking";
-  // const char* command = commandString.c_str();
-  // if (system(command) != 0) {
-  //   ROS_ERROR("Can't load parameter.");
-  //   return false;
-  // }
-  //
+
+  std::string line;
+  std::string ur_path = ros::package::getPath("ur3_milling") + "/data/test.txt";
+  ROS_INFO_STREAM("ur_path: " << ur_path);
+  std::ifstream infile(ur_path);
+
+  while (std::getline(infile, line))  // To get you all the lines.
+    {
+      if (line.empty()) {
+  //      std::cout << "Empty line." << std::endl;
+  //      continue;
+      } else {
+        //    ROS_INFO_STREAM("line: " << line);
+        typedef std::vector<std::string> Tokens;
+        Tokens tokens;
+        boost::split(tokens, line, boost::is_any_of(" "));
+
+        if (line.size() < 2) {
+          // std::cout << "reject: " << line.size() << std::endl;
+          } else {
+          std::string::size_type sz;
+          geometry_msgs::PoseStamped pose = move_group_->getCurrentPose();
+          pose.pose.position.x -= std::stod(tokens[0], &sz) * 0.001;
+          pose.pose.position.y -= std::stod(tokens[1], &sz) * 0.001;
+          pose.pose.position.z += std::stod(tokens[2], &sz) * 0.001;
+          //    ROS_INFO_STREAM("position: " << pose.pose.position.x << " , " <<pose.pose.position.y << " , " <<pose.pose.position.z);
+          poses.push_back(pose);
+          // std::cout << "accept: " << line.size() << std::endl;
+        }
+      }
+    }
+    std::cout << "size of points: " << poses.size() << std::endl;
+    sleep(1.0);
   // XmlRpc::XmlRpcValue stacking_configuration;
   // if (!nh_.getParam("configuration", stacking_configuration) || stacking_configuration.size() == 0)
   //   return false;
@@ -105,22 +123,100 @@ bool MillingPath::LoadStackingConfiguration()
   //   XmlRpc::XmlRpcValue pose = stacking_configuration[i]["pose"];
   //   geometry_msgs::Pose placing_pose;
   //   placing_pose.position.x = static_cast<double>(pose["position"]["x"]);
-  //   placing_pose.position.y = static_cast<double>(pose["position"]["y"]);
-  //   placing_pose.position.z = static_cast<double>(pose["position"]["z"]);
-  //   placing_pose.orientation.x = static_cast<double>(pose["orientation"]["x"]);
-  //   placing_pose.orientation.y = static_cast<double>(pose["orientation"]["y"]);
-  //   placing_pose.orientation.z = static_cast<double>(pose["orientation"]["z"]);
-  //   placing_pose.orientation.w = static_cast<double>(pose["orientation"]["w"]);
-  //   Object object(name);
-  //   object.setPlacingPose(placing_pose);
-  //   desired_stacking_configuration_.push_back(object);
   // }
   return true;
 }
 
+bool MillingPath::ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  SetSpindle(1.0);
+
+  ROS_INFO("Move up");
+  MoveTranslation(0, 0, distance_to_object_);
+
+  //// go to...
+  ROS_INFO("Move above the line");
+  double height = move_group_->getCurrentPose().pose.position.z + distance_to_object_;
+  MoveAbsTranslation(poses[0].pose.position.x, poses[0].pose.position.y, height);
+
+    //// go down
+  //// go to...
+  ROS_INFO("Move above the line");
+  MoveTranslation(0, 0,  -distance_to_object_);
 
 
-bool MillingPath::MoveToPose(const geometry_msgs::PoseStamped& target_pose)
+  //// trajectory move
+  move_group_->setMaxVelocityScalingFactor(velocity_cut_);
+  move_group_->setMaxAccelerationScalingFactor(max_acceleration_*0.1);
+
+  for (int i = 0; i < poses.size(); i++) {
+    LinearMoveToPose(poses[i]);
+  }
+
+  SetSpindle(0.0);
+
+  return 1;
+}
+
+bool MillingPath::MoveTranslation(const double x_, const double y_, const double z_)
+{
+  geometry_msgs::Pose target_pose = move_group_->getCurrentPose().pose;
+  ROS_INFO_STREAM(
+      "MoveRelTrans: current pos : " << target_pose.position.x << " , " << target_pose.position.y);
+  target_pose.position.x += x_;
+  target_pose.position.y += y_;
+  target_pose.position.z += z_;
+
+  ROS_INFO_STREAM("goto : " << target_pose.position.x << " , " << target_pose.position.y);
+  move_group_->setPoseTarget(target_pose);
+  bool success = move_group_->plan(my_plan_);
+  if(!success) return 0;
+  move_group_->move();
+  ros::Duration(1.0).sleep();
+
+  return 1;
+}
+
+bool MillingPath::MoveAbsTranslation(const double x_, const double y_, const double z_)
+{
+  geometry_msgs::Pose target_pose = move_group_->getCurrentPose().pose;
+  ROS_INFO_STREAM(
+      "MoveAbsTrans: current pos : " << target_pose.position.x << " , " << target_pose.position.y);
+  target_pose.position.x = x_;
+  target_pose.position.y = y_;
+  target_pose.position.z = z_;
+
+  ROS_INFO_STREAM("goto : " << target_pose.position.x << " , " << target_pose.position.y);
+  move_group_->setPoseTarget(target_pose);
+  bool success = move_group_->plan(my_plan_);
+  if(!success) return 0;
+  move_group_->move();
+  ros::Duration(1.0).sleep();
+
+  return 1;
+}
+
+
+bool MillingPath::SetSpindle(double state){
+  // turn on the spindle
+  ros::ServiceClient client = nh_.serviceClient<ur_msgs::SetIO>("/ur_driver/set_io");
+  ur_msgs::SetIO srv;
+  srv.request.fun = 1;
+  srv.request.pin = 4;
+  srv.request.state = state;
+  if(client.call(srv)){
+    ROS_INFO("success!");
+  }
+  else {
+    ROS_ERROR("failed to call srv");
+    return 0;
+  }
+  return 1;
+}
+
+
+
+bool MillingPath::LinearMoveToPose(const geometry_msgs::PoseStamped& target_pose)
 {
   move_pose_publisher_.publish(target_pose);
   geometry_msgs::PoseStamped current_pose = move_group_->getCurrentPose();
@@ -134,7 +230,7 @@ bool MillingPath::MoveToPose(const geometry_msgs::PoseStamped& target_pose)
   // Plan trajectory.
   moveit_msgs::RobotTrajectory trajectory;
   moveit_msgs::MoveItErrorCodes error_code;
-  double path_fraction = move_group_->computeCartesianPath(waypoints, 0.03, 0.0, trajectory, true, &error_code);
+  double path_fraction = move_group_->computeCartesianPath(waypoints, eef_step_, 0.0, trajectory, true, &error_code);
   if(path_fraction < 1.0) {
     ROS_WARN_STREAM("MillingPath: Could not calculate Cartesian Path.");
     return false;
@@ -150,6 +246,10 @@ bool MillingPath::MoveToPose(const geometry_msgs::PoseStamped& target_pose)
   moveit::planning_interface::MoveGroup::Plan my_plan;
   moveit_msgs::RobotState robot_state_msg;
   robot_state::robotStateToRobotStateMsg(*move_group_->getCurrentState(), robot_state_msg);
+
+
+  ROS_INFO_STREAM(
+      "goto: " << target_pose.pose.position.x << " , " << target_pose.pose.position.y << " , " << target_pose.pose.position.z << " ,  point num: " << trajectory.joint_trajectory.points.size());
 
   my_plan.trajectory_ = trajectory;
   my_plan.start_state_ = robot_state_msg;

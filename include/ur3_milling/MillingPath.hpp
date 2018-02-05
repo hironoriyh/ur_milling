@@ -33,7 +33,10 @@
 #include <std_srvs/Empty.h>
 
 
+using namespace std;
+
 namespace ur3_milling {
+
 
 // typedefs.
 typedef Eigen::Vector3d Vector3D;
@@ -52,9 +55,11 @@ private:
    */
   bool ReadParameters();
 
-  bool LoadStackingConfiguration();
+  bool LoadMillingPath();
 
   bool ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+
+  bool SetSpindle(double state);
 
   // bool DetectObject(std::vector<Object>& models_to_detect);
 
@@ -62,7 +67,11 @@ private:
   //
   // bool LocalizeObjects();
 
-  bool MoveToPose(const geometry_msgs::PoseStamped& target_pose);
+  bool MoveTranslation(const double x_, const double y_, const double z_);
+
+  bool MoveAbsTranslation(const double x_, const double y_, const double z_);
+
+  bool LinearMoveToPose(const geometry_msgs::PoseStamped& target_pose);
 
   bool MoveToPoses(std::vector<geometry_msgs::PoseStamped> target_poses);
 
@@ -75,20 +84,31 @@ private:
 
 	//! Transform listener.
 	tf::TransformListener tf_listener_;
-	std::string camera_frame_;
-	std::string world_frame_;
+	string world_frame_;
 
 	//! Publisher.
 	ros::Publisher mesh_publisher_;
 	ros::Publisher move_pose_publisher_;
 
   //! Model locations from object localisation.
-  std::vector<geometry_msgs::PoseStamped> model_locations_;
+  std::vector<geometry_msgs::PoseStamped> poses;
 
   //! MoveIt! move group interface.
   std::shared_ptr<moveit::planning_interface::MoveGroup> move_group_;
-  double velocity_scaling_;
   std::shared_ptr<moveit::planning_interface::PlanningSceneInterface> planning_scene_;
+  robot_state::RobotStateConstPtr rs_;
+  moveit::planning_interface::MoveGroup::Plan my_plan_;
+
+
+  ros::ServiceServer execute_milling_server_;
+
+
+  double velocity_high_;
+  double distance_to_object_;
+  double velocity_cut_;
+  double max_acceleration_;
+  double eef_step_;
+  string camera_frame_;
 
   //! Allowed deviation to target pose.
   double position_diff_;
