@@ -48,6 +48,8 @@
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
 #include <moveit/robot_state/conversions.h>
 
+#include <ur_msgs/SetIO.h>
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -90,6 +92,22 @@ int main(int argc, char **argv)
   bool success;
   robot_state::RobotState rs = *group.getCurrentState();
   double moving_up_down = 0.02;
+
+
+  // turn on the spindle
+  ros::ServiceClient client = node_handle.serviceClient<ur_msgs::SetIO>("/ur_driver/set_io");
+  ur_msgs::SetIO srv;
+  srv.request.fun = 1;
+  srv.request.pin = 4;
+  srv.request.state = 1.0;
+  if(client.call(srv)){
+    ROS_INFO("success!");
+  }
+  else {
+    ROS_ERROR("failed to call srv");
+    return 1;
+  }
+
 
   ////// move to the origin
   std::vector<double> group_variable_values;

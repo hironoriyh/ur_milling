@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   urdf_models
   grasp_and_place_msgs
   cv_bridge
+  ur_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -57,6 +58,7 @@ catkin_package(
     urdf_models
     grasp_and_place_msgs
     cv_bridge
+    ur_msgs
 #  DEPENDS system_lib
 )
 

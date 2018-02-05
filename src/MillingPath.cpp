@@ -62,8 +62,9 @@ MillingPath::MillingPath(ros::NodeHandle& nh)
 
 MillingPath::~MillingPath()
 {
-
 }
+
+//bool MillinPath::
 
 bool MillingPath::ReadParameters()
 {

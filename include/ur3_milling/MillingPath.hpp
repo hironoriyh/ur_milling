@@ -82,13 +82,7 @@ private:
 
 	//! Publisher.
 	ros::Publisher mesh_publisher_;
-	ros::Publisher refined_pose_publisher_;
 	ros::Publisher move_pose_publisher_;
-	ros::Publisher localised_objects_visualizer_;
-	ros::Publisher target_config_publisher_;
-
-	visualization_msgs::MarkerArray mesh_;
-	visualization_msgs::MarkerArray refined_mesh_;
 
   //! Model locations from object localisation.
   std::vector<geometry_msgs::PoseStamped> model_locations_;
