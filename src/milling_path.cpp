@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 
   bool success;
   robot_state::RobotState rs = *group.getCurrentState();
-  double moving_up_down = 0.02;
+  double moving_up_down = 0.01;
 
 
   // turn on the spindle
