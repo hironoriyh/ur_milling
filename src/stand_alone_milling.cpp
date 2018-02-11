@@ -60,7 +60,7 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "milling_path");
+  ros::init(argc, argv, "stand_alone_milling");
   ros::NodeHandle node_handle;
   ros::AsyncSpinner spinner(1);
   spinner.start();

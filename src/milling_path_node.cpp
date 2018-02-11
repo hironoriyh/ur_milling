@@ -10,7 +10,7 @@ int main(int argc, char** argv)
 
   ur3_milling::MillingPath milling_path(nodeHandle);
 
-  ros::AsyncSpinner spinner(1);
+  ros::AsyncSpinner spinner(2);
   spinner.start();
 
   ros::Rate loop_rate(1000);

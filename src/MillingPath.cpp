@@ -45,21 +45,22 @@ MillingPath::MillingPath(ros::NodeHandle& nh)
   move_group_->setPlannerId("RRTConnectkConfigDefault");
   move_group_->setPlanningTime(10);
   move_group_->setNumPlanningAttempts(10);
-  rs_ = move_group_->getCurrentState();
 
 
   // Set planning scene interface.
   planning_scene_.reset(new moveit::planning_interface::PlanningSceneInterface());
+  ros::Duration(3.0).sleep();
 
   ////// move to the origin
-  vector<double> group_variable_values;
-  rs_->copyJointGroupPositions(rs_->getRobotModel()->
-                              getJointModelGroup(move_group_->getName()),  group_variable_values);
-
-  std::cout << "current joint state: ";
-  for (int i = 0; i < 6; i++)
-    std::cout << group_variable_values[i] << " , ";
-  std::cout << std::endl;
+  // rs_ = move_group_->getCurrentState();
+  // vector<double> group_variable_values;
+  // rs_->copyJointGroupPositions(rs_->getRobotModel()->
+  //                             getJointModelGroup(move_group_->getName()),  group_variable_values);
+  //
+  // std::cout << "current joint state: ";
+  // for (int i = 0; i < 6; i++)
+  //   std::cout << group_variable_values[i] << " , ";
+  // std::cout << std::endl;
 
   execute_milling_server_ = nh_.advertiseService("execute_milling", &MillingPath::ExecuteMillingCB, this);
 }
@@ -114,7 +115,7 @@ bool MillingPath::LoadMillingPath()
       }
     }
     std::cout << "size of points: " << poses.size() << std::endl;
-    sleep(1.0);
+    ros::Duration(1.0).sleep();
   // XmlRpc::XmlRpcValue stacking_configuration;
   // if (!nh_.getParam("configuration", stacking_configuration) || stacking_configuration.size() == 0)
   //   return false;
