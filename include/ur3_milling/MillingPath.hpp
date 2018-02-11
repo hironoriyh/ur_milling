@@ -7,6 +7,10 @@
 
 # pragma once
 
+//#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+//        MoveGroup = moveit.planning_interface.MoveGroup;
+//#pragma GCC diagnostic warning "-Wdeprecated-declarations"
+
 // ros
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -75,6 +79,9 @@ private:
 
   bool MoveToPoses(std::vector<geometry_msgs::PoseStamped> target_poses);
 
+  bool DetectObject(std_msgs::String model_to_detect);
+
+
   geometry_msgs::Pose GetTargetTCPPose(const int stack_model_index);
 
   visualization_msgs::Marker VisualizeMarker(const int marker_type, const geometry_msgs::Pose pose, const int id, const float r, const float g, const float b, const float a, const Vector3D scale = Vector3D::Ones());
@@ -89,6 +96,9 @@ private:
 	//! Publisher.
 	ros::Publisher mesh_publisher_;
 	ros::Publisher move_pose_publisher_;
+
+  visualization_msgs::Marker mesh_;
+
 
   //! Model locations from object localisation.
   std::vector<geometry_msgs::PoseStamped> poses;

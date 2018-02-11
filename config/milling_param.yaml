@@ -1,4 +1,4 @@
-camera_frame:                          sr300_depth_optical_frame
+camera_frame:                       kinect2_ir_optical_frame
 velocity_high:                      0.1
 velocity_cut:                      0.01
 max_acceleration: 0.2

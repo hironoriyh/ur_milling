@@ -1,23 +1,25 @@
 <launch>
 
-  <arg name="camera"          default="sr300" />
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch" >
+      <arg name="publish_tf"        value="true"/>
+      <arg name="fps_limit"        value="10"/>
+  </include>
 
   <node name="milling_path" pkg="ur3_milling" type="milling_path_node" respawn="false" output="screen">
-    <rosparam command="load" file="$(find grasp_and_place)/config/milling_param.yaml"/>
+    <rosparam command="load" file="$(find ur3_milling)/config/milling_param.yaml"/>
   </node>
 
-<!--
-  <include file="$(find object_detection)/launch/frame_broadcaster.launch" />
-  <include file="$(find realsense_camera)/launch/sr300_nodelet_rgbd.launch">
-    <arg name="camera"        value="$(arg camera)"/>
-  </include>
-  -->
+  <node pkg="object_detection" type="object_pose_refinement_service" name="object_pose_refinement_service" output="screen">
+   <rosparam command="load" file="$(find object_detection)/params/refinement.yaml"/>
+  </node>
   
-  <!--
+  <include file="$(find ur3_milling)/launch/frame_broadcaster.launch" />
+  
   <node pkg="object_detection" type="object_detection_service" name="object_detection_service" output="screen">
    	<rosparam command="load" file="$(find object_detection)/params/detection.yaml"/>
   </node>
-
+  
+ <!--
   <node pkg="object_detection" type="object_localisation_service" name="object_localisation_service" output="screen">
    	<rosparam command="load" file="$(find object_detection)/params/localisation.yaml"/>
   </node>

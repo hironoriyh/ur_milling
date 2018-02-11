@@ -7,7 +7,7 @@
 
 #include <ur3_milling/MillingPath.hpp>
 
-//#include <object_detection/DetectObject.h>
+#include <object_detection/DetectObject.h>
 //#include <object_detection/LocaliseObjects.h>
 
 #include <visualization_msgs/Marker.h>
@@ -35,7 +35,7 @@ MillingPath::MillingPath(ros::NodeHandle& nh)
   ReadParameters();
 
   // Publisher
-  mesh_publisher_ = nh_.advertise<visualization_msgs::MarkerArray>("/object_mesh", 1, true);
+  mesh_publisher_ = nh_.advertise<visualization_msgs::Marker>("/object_mesh", 1, true);
   move_pose_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_pose", 1, true);
 
   // Set moveit interface
@@ -114,7 +114,7 @@ bool MillingPath::LoadMillingPath()
       }
     }
     std::cout << "size of points: " << poses.size() << std::endl;
-    sleep(1.0);
+    ros::Duration(1.0).sleep();
   // XmlRpc::XmlRpcValue stacking_configuration;
   // if (!nh_.getParam("configuration", stacking_configuration) || stacking_configuration.size() == 0)
   //   return false;
@@ -157,6 +157,62 @@ bool MillingPath::ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empt
 
   return 1;
 }
+
+bool MillingPath::DetectObject(std_msgs::String model_to_detect)
+{
+  ROS_INFO("SerialStacking: DetectObject");
+  ros::ServiceClient client = nh_.serviceClient<object_detection::DetectObject>("/object_detection");
+  object_detection::DetectObject srv; // TODO: Add string to msg.
+  srv.request.models_to_detect.push_back(model_to_detect);
+
+  if (!client.waitForExistence(ros::Duration(2.0))) {
+    return false;
+  }
+
+  if (client.call(srv)) {
+    ROS_INFO("Object detection executed.");
+    if(srv.response.model_ids.size() == 0) return false;
+
+    for (int j = 0; j < srv.response.model_ids.size(); j++) {
+      std::string id = srv.response.model_ids[j].data;
+      const ros::Time time = ros::Time::now();
+      geometry_msgs::PoseStamped model_camera_pose;
+      geometry_msgs::PoseStamped model_pose;
+      model_camera_pose.header.frame_id = camera_frame_;
+      model_camera_pose.header.stamp = time;
+      model_camera_pose.pose = srv.response.detected_model_poses[j];
+      // model_camera_pose.pose.position.x -= 0.03;
+      model_pose.header.frame_id = world_frame_;
+      model_pose.header.stamp = time;
+
+      try {
+        const ros::Time time = ros::Time::now();
+        const ros::Duration timeout(1);
+        const ros::Duration polling_sleep_duration(4);
+        std::string* error_msg = NULL;
+        tf_listener_.waitForTransform(world_frame_, camera_frame_, time, timeout, polling_sleep_duration, error_msg);
+        tf_listener_.transformPose(world_frame_, model_camera_pose, model_pose);
+      } catch (tf2::TransformException &ex) {
+        ROS_WARN("%s", ex.what());
+        ros::Duration(1.0).sleep();
+        continue;
+      }
+
+      // Visualize object mesh.
+      ROS_INFO_STREAM("DetectObject \n "   << model_pose.pose);
+      visualization_msgs::Marker object_mesh_marker = VisualizeMarker(
+          visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
+      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/Downsampled_0";
+      object_mesh_marker.mesh_resource = model_path;
+      object_mesh_marker.ns = id;
+      mesh_publisher_.publish(object_mesh_marker);
+    }
+  } else {
+    ROS_WARN("detect object: Could not call client.");
+  }
+  return true;
+}
+
 
 bool MillingPath::MoveTranslation(const double x_, const double y_, const double z_)
 {
