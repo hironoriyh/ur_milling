@@ -130,7 +130,12 @@ bool MillingPath::LoadMillingPath()
 
 bool MillingPath::ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
-  SetSpindle(1.0);
+
+  std_msgs::String msg;
+  msg.data = "test";
+  DetectObject(msg);
+
+//  SetSpindle(1.0);
 
   ROS_INFO("Move up");
   MoveTranslation(0, 0, distance_to_object_);
@@ -161,12 +166,12 @@ bool MillingPath::ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empt
 
 bool MillingPath::DetectObject(std_msgs::String model_to_detect)
 {
-  ROS_INFO("SerialStacking: DetectObject");
+  ROS_INFO("ur3 milling: DetectObject");
   ros::ServiceClient client = nh_.serviceClient<object_detection::DetectObject>("/object_detection");
   object_detection::DetectObject srv; // TODO: Add string to msg.
   srv.request.models_to_detect.push_back(model_to_detect);
 
-  if (!client.waitForExistence(ros::Duration(2.0))) {
+  if (!client.waitForExistence(ros::Duration(3.0))) {
     return false;
   }
 
@@ -203,7 +208,7 @@ bool MillingPath::DetectObject(std_msgs::String model_to_detect)
       ROS_INFO_STREAM("DetectObject \n "   << model_pose.pose);
       visualization_msgs::Marker object_mesh_marker = VisualizeMarker(
           visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
-      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/Downsampled_0";
+      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/Downsampled_0.ply";
       object_mesh_marker.mesh_resource = model_path;
       object_mesh_marker.ns = id;
       mesh_publisher_.publish(object_mesh_marker);
