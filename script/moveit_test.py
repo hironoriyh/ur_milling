@@ -55,7 +55,7 @@ def milling_paths():
     print " org pos: " , org_pose
     moveRelativePt(group, [0.0, 0.0, 0.03], speed_move)
 
-    group_variable_values = [5.00636 , -1.00303 , 1.38166 , -0.360633 , -0.491747 , -3.15541 ]
+    group_variable_values = [-1.34895 , -1.56471 , 2.1641 , -0.744696 , 0.301079 , -2.99502]
     moveJoint(group, group_variable_values, speed_move)
 #     print "============ Going up"
 #     org_pose = group.get_current_pose().pose

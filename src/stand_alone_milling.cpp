@@ -60,7 +60,7 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "milling_path");
+  ros::init(argc, argv, "stand_alone_milling");
   ros::NodeHandle node_handle;
   ros::AsyncSpinner spinner(1);
   spinner.start();
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 
   bool success;
   robot_state::RobotState rs = *group.getCurrentState();
-  double moving_up_down = 0.02;
+  double moving_up_down = 0.01;
 
 
   // turn on the spindle

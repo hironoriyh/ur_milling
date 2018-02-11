@@ -93,11 +93,10 @@ include_directories(
 # object_detection_generate_messages_cpp
 # )
 
-## Declare a C++ executable
+# Declare a C++ executable
 add_executable(
-  milling_path
-  src/milling_path.cpp
-  # src/milling_path_node.cpp
+  stand_alone_milling
+  src/stand_alone_milling.cpp
 )
 
 add_executable(
@@ -126,15 +125,16 @@ add_executable(
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(
-  milling_path
+  # milling_path
+  stand_alone_milling
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
 target_link_libraries(
   milling_path_node
-  # ${PROJECT_NAME}
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 #
 # target_link_libraries(

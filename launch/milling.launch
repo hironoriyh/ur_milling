@@ -12,20 +12,12 @@
   <node pkg="object_detection" type="object_pose_refinement_service" name="object_pose_refinement_service" output="screen">
    <rosparam command="load" file="$(find object_detection)/params/refinement.yaml"/>
   </node>
-  
+
   <include file="$(find ur3_milling)/launch/frame_broadcaster.launch" />
-  
-  <node pkg="object_detection" type="object_detection_service" name="object_detection_service" output="screen">
-   	<rosparam command="load" file="$(find object_detection)/params/detection.yaml"/>
-  </node>
-  
+
  <!--
   <node pkg="object_detection" type="object_localisation_service" name="object_localisation_service" output="screen">
    	<rosparam command="load" file="$(find object_detection)/params/localisation.yaml"/>
-  </node>
-
-  <node pkg="object_detection" type="object_pose_refinement_service" name="object_pose_refinement_service" output="screen">
-   <rosparam command="load" file="$(find object_detection)/params/refinement.yaml"/>
   </node>
 -->
 
