@@ -35,9 +35,12 @@
 #include <geometry_msgs/Point.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
+#include <object_detection/DetectObject.h>
+//#include <object_detection/LocaliseObjects.h>
 
 
 using namespace std;
+using namespace object_detection;
 
 namespace ur3_milling {
 
@@ -61,7 +64,7 @@ private:
 
   bool LoadMillingPath();
 
-  bool ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool ExecuteMillingCB(DetectObject::Request& req, DetectObject::Response& res);
 
   bool SetSpindle(double state);
 
@@ -79,7 +82,7 @@ private:
 
   bool MoveToPoses(std::vector<geometry_msgs::PoseStamped> target_poses);
 
-  bool DetectObject(std_msgs::String model_to_detect);
+  bool DetectObject(DetectObject models_to_detect);
 
 
   geometry_msgs::Pose GetTargetTCPPose(const int stack_model_index);

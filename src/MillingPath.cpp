@@ -7,9 +7,6 @@
 
 #include <ur3_milling/MillingPath.hpp>
 
-#include <object_detection/DetectObject.h>
-//#include <object_detection/LocaliseObjects.h>
-
 #include <visualization_msgs/Marker.h>
 
 #include <tf_conversions/tf_eigen.h>
@@ -128,12 +125,14 @@ bool MillingPath::LoadMillingPath()
   return true;
 }
 
-bool MillingPath::ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+bool MillingPath::ExecuteMillingCB(DetectObject::Request& req, DetectObject::Response& res)
 {
 
-  std_msgs::String msg;
-  msg.data = "test";
-  DetectObject(msg);
+//  std_msgs::String msg;
+//  msg.data = "test";
+  object_detection::DetectObject srv;
+  srv.request =req;
+  DetectObject(srv);
 
 //  SetSpindle(1.0);
 
@@ -164,12 +163,10 @@ bool MillingPath::ExecuteMillingCB(std_srvs::Empty::Request& req, std_srvs::Empt
   return 1;
 }
 
-bool MillingPath::DetectObject(std_msgs::String model_to_detect)
+bool MillingPath::DetectObject(object_detection::DetectObject srv)
 {
   ROS_INFO("ur3 milling: DetectObject");
   ros::ServiceClient client = nh_.serviceClient<object_detection::DetectObject>("/object_detection");
-  object_detection::DetectObject srv; // TODO: Add string to msg.
-  srv.request.models_to_detect.push_back(model_to_detect);
 
   if (!client.waitForExistence(ros::Duration(3.0))) {
     return false;
@@ -187,7 +184,6 @@ bool MillingPath::DetectObject(std_msgs::String model_to_detect)
       model_camera_pose.header.frame_id = camera_frame_;
       model_camera_pose.header.stamp = time;
       model_camera_pose.pose = srv.response.detected_model_poses[j];
-      // model_camera_pose.pose.position.x -= 0.03;
       model_pose.header.frame_id = world_frame_;
       model_pose.header.stamp = time;
 
@@ -208,7 +204,7 @@ bool MillingPath::DetectObject(std_msgs::String model_to_detect)
       ROS_INFO_STREAM("DetectObject \n "   << model_pose.pose);
       visualization_msgs::Marker object_mesh_marker = VisualizeMarker(
           visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
-      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/Downsampled_0.ply";
+      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/Downsampled_0.dae";
       object_mesh_marker.mesh_resource = model_path;
       object_mesh_marker.ns = id;
       mesh_publisher_.publish(object_mesh_marker);
