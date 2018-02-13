@@ -9,7 +9,7 @@
     <rosparam command="load" file="$(find ur3_milling)/config/milling_param.yaml"/>
   </node>
 
-<!-- 
+<!--
   <node pkg="object_detection" type="object_pose_refinement_service" name="object_pose_refinement_service" output="screen">
    <rosparam command="load" file="$(find object_detection)/params/refinement.yaml"/>
   </node>
