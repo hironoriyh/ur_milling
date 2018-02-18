@@ -124,6 +124,8 @@ private:
   double max_acceleration_;
   double eef_step_;
   string camera_frame_;
+  string object_frame_;
+
 
   //! Allowed deviation to target pose.
   double position_diff_;

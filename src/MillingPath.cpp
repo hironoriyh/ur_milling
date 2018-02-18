@@ -137,8 +137,13 @@ bool MillingPath::ExecuteMillingCB(DetectObject::Request& req, DetectObject::Res
 
 //  SetSpindle(1.0);
 //
-//  ROS_INFO("Move up");
-//  MoveTranslation(0, 0, distance_to_object_);
+  ROS_INFO("Move up");
+  MoveTranslation(0, 0, distance_to_object_);
+  //// go to...
+  ROS_INFO("Move above the object");
+  double height = move_group_->getCurrentPose().pose.position.z + distance_to_object_;
+  geometry_msgs::Pose pose_object = mesh_.pose;
+  MoveAbsTranslation(pose_object.position.x, pose_object.position.y, height);
 //
 //  //// go to...
 //  ROS_INFO("Move above the line");
@@ -207,10 +212,14 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
       ROS_INFO_STREAM("DetectObject \n "   << model_camera_pose.pose);
       visualization_msgs::Marker object_mesh_marker = VisualizeMarker(
           visualization_msgs::Marker::MESH_RESOURCE, model_camera_pose.pose, j, .5, .5, .5, .8);
-      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.stl";
+//      visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
+//
+      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.dae";
       object_mesh_marker.mesh_resource = model_path;
       object_mesh_marker.ns = id;
       object_mesh_marker.header.frame_id =camera_frame_;
+//      object_mesh_marker.header.frame_id =object_frame_;
+
       mesh_publisher_.publish(object_mesh_marker);
     }
   } else {
