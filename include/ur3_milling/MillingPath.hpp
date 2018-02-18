@@ -99,6 +99,7 @@ private:
 	ros::Publisher move_pose_publisher_;
 
 	visualization_msgs::Marker mesh_;
+	geometry_msgs::Pose object_pose_;
 
 	//! Model locations from object localisation.
 	std::vector<geometry_msgs::PoseStamped> poses;

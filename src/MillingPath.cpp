@@ -136,16 +136,15 @@ bool MillingPath::ExecuteMillingCB(DetectObject::Request& req, DetectObject::Res
   DetectObject(srv);
 
 //  SetSpindle(1.0);
-//
+
   ROS_INFO("Move up");
   MoveTranslation(0, 0, distance_to_object_);
   //// go to...
   ROS_INFO("Move above the object");
   double height = move_group_->getCurrentPose().pose.position.z + distance_to_object_;
-  geometry_msgs::Pose pose_object = mesh_.pose;
-  MoveAbsTranslation(pose_object.position.x, pose_object.position.y, height);
-//
-//  //// go to...
+  MoveAbsTranslation(object_pose_.position.x, object_pose_.position.y, object_pose_.position.z + distance_to_object_);
+
+  //  //// go to...
 //  ROS_INFO("Move above the line");
 //  double height = move_group_->getCurrentPose().pose.position.z + distance_to_object_;
 //  MoveAbsTranslation(poses[0].pose.position.x, poses[0].pose.position.y, height);
@@ -223,6 +222,7 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
 //      object_mesh_marker.header.frame_id =object_frame_;
 
       mesh_publisher_.publish(object_mesh_marker);
+      object_pose_ = model_pose.pose;
     }
   } else {
     ROS_WARN("detect object: Could not call client.");
