@@ -214,7 +214,9 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
           visualization_msgs::Marker::MESH_RESOURCE, model_camera_pose.pose, j, .5, .5, .5, .8);
 //      visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
 //
-      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.dae";
+//      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.dae";
+      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.stl";
+
       object_mesh_marker.mesh_resource = model_path;
       object_mesh_marker.ns = id;
       object_mesh_marker.header.frame_id =camera_frame_;
