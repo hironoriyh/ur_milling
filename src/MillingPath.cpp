@@ -60,6 +60,8 @@ MillingPath::MillingPath(ros::NodeHandle& nh)
   // std::cout << std::endl;
 
   execute_milling_server_ = nh_.advertiseService("execute_milling", &MillingPath::ExecuteMillingCB, this);
+  object_detection_server_ = nh_.advertiseService("detect_object", &MillingPath::detectObjectCB, this);
+
 }
 
 MillingPath::~MillingPath()
@@ -113,16 +115,15 @@ bool MillingPath::LoadMillingPath()
     }
     std::cout << "size of points: " << poses.size() << std::endl;
     ros::Duration(1.0).sleep();
-  // XmlRpc::XmlRpcValue stacking_configuration;
-  // if (!nh_.getParam("configuration", stacking_configuration) || stacking_configuration.size() == 0)
-  //   return false;
-  // for (int i = 0; i < stacking_configuration.size(); ++i) {
-  //   std::string name = static_cast<std::string>(stacking_configuration[i]["id"]);
-  //   XmlRpc::XmlRpcValue pose = stacking_configuration[i]["pose"];
-  //   geometry_msgs::Pose placing_pose;
-  //   placing_pose.position.x = static_cast<double>(pose["position"]["x"]);
-  // }
   return true;
+}
+
+bool MillingPath::detectObjectCB(DetectObject::Request& req, DetectObject::Response& res) {
+	object_detection::DetectObject srv;
+	srv.request = req;
+	DetectObject(srv);
+
+	return true;
 }
 
 bool MillingPath::ExecuteMillingCB(DetectObject::Request& req, DetectObject::Response& res)
@@ -135,30 +136,30 @@ bool MillingPath::ExecuteMillingCB(DetectObject::Request& req, DetectObject::Res
   DetectObject(srv);
 
 //  SetSpindle(1.0);
-
-  ROS_INFO("Move up");
-  MoveTranslation(0, 0, distance_to_object_);
-
-  //// go to...
-  ROS_INFO("Move above the line");
-  double height = move_group_->getCurrentPose().pose.position.z + distance_to_object_;
-  MoveAbsTranslation(poses[0].pose.position.x, poses[0].pose.position.y, height);
-
-    //// go down
-  //// go to...
-  ROS_INFO("Move above the line");
-  MoveTranslation(0, 0,  -distance_to_object_);
-
-
-  //// trajectory move
-  move_group_->setMaxVelocityScalingFactor(velocity_cut_);
-  move_group_->setMaxAccelerationScalingFactor(max_acceleration_*0.1);
-
-  for (int i = 0; i < poses.size(); i++) {
-    LinearMoveToPose(poses[i]);
-  }
-
-  SetSpindle(0.0);
+//
+//  ROS_INFO("Move up");
+//  MoveTranslation(0, 0, distance_to_object_);
+//
+//  //// go to...
+//  ROS_INFO("Move above the line");
+//  double height = move_group_->getCurrentPose().pose.position.z + distance_to_object_;
+//  MoveAbsTranslation(poses[0].pose.position.x, poses[0].pose.position.y, height);
+//
+//    //// go down
+//  //// go to...
+//  ROS_INFO("Move above the line");
+//  MoveTranslation(0, 0,  -distance_to_object_);
+//
+//
+//  //// trajectory move
+//  move_group_->setMaxVelocityScalingFactor(velocity_cut_);
+//  move_group_->setMaxAccelerationScalingFactor(max_acceleration_*0.1);
+//
+//  for (int i = 0; i < poses.size(); i++) {
+//    LinearMoveToPose(poses[i]);
+//  }
+//
+//  SetSpindle(0.0);
 
   return 1;
 }
@@ -177,13 +178,15 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
     if(srv.response.model_ids.size() == 0) return false;
 
     for (int j = 0; j < srv.response.model_ids.size(); j++) {
-      std::string id = srv.response.model_ids[j].data;
       const ros::Time time = ros::Time::now();
+
       geometry_msgs::PoseStamped model_camera_pose;
-      geometry_msgs::PoseStamped model_pose;
       model_camera_pose.header.frame_id = camera_frame_;
       model_camera_pose.header.stamp = time;
+      std::string id = srv.response.model_ids[j].data;
       model_camera_pose.pose = srv.response.detected_model_poses[j];
+
+      geometry_msgs::PoseStamped model_pose;
       model_pose.header.frame_id = world_frame_;
       model_pose.header.stamp = time;
 
@@ -201,12 +204,13 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
       }
 
       // Visualize object mesh.
-      ROS_INFO_STREAM("DetectObject \n "   << model_pose.pose);
+      ROS_INFO_STREAM("DetectObject \n "   << model_camera_pose.pose);
       visualization_msgs::Marker object_mesh_marker = VisualizeMarker(
-          visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
-      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/Downsampled_0.dae";
+          visualization_msgs::Marker::MESH_RESOURCE, model_camera_pose.pose, j, .5, .5, .5, .8);
+      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.stl";
       object_mesh_marker.mesh_resource = model_path;
       object_mesh_marker.ns = id;
+      object_mesh_marker.header.frame_id =camera_frame_;
       mesh_publisher_.publish(object_mesh_marker);
     }
   } else {

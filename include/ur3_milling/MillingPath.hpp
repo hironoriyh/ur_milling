@@ -64,6 +64,8 @@ private:
 
   bool LoadMillingPath();
 
+  bool detectObjectCB(DetectObject::Request& req, DetectObject::Response& res);
+
   bool ExecuteMillingCB(DetectObject::Request& req, DetectObject::Response& res);
 
   bool SetSpindle(double state);
@@ -114,7 +116,7 @@ private:
 
 
   ros::ServiceServer execute_milling_server_;
-
+  ros::ServiceServer object_detection_server_;
 
   double velocity_high_;
   double distance_to_object_;
