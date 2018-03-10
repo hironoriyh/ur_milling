@@ -242,8 +242,8 @@ bool MillingPath::MoveTranslation(const double x_, const double y_, const double
 
   ROS_INFO_STREAM("goto : " << target_pose.position.x << " , " << target_pose.position.y);
   move_group_->setPoseTarget(target_pose);
-  bool success = move_group_->plan(my_plan_);
-  if(!success) return 0;
+  move_group_->plan(my_plan_);
+  // if(!success) return 0;
   move_group_->move();
   ros::Duration(1.0).sleep();
 
@@ -261,8 +261,8 @@ bool MillingPath::MoveAbsTranslation(const double x_, const double y_, const dou
 
   ROS_INFO_STREAM("goto : " << target_pose.position.x << " , " << target_pose.position.y);
   move_group_->setPoseTarget(target_pose);
-  bool success = move_group_->plan(my_plan_);
-  if(!success) return 0;
+  move_group_->plan(my_plan_);
+  // if(!success) return 0;
   move_group_->move();
   ros::Duration(1.0).sleep();
 

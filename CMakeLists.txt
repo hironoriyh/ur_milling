@@ -19,8 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf_conversions
   object_detection
   visualization_msgs
-  urdf_models
-  grasp_and_place_msgs
   cv_bridge
   ur_msgs
 )
@@ -55,8 +53,6 @@ catkin_package(
     tf_conversions
     object_detection
     visualization_msgs
-    urdf_models
-    grasp_and_place_msgs
     cv_bridge
     ur_msgs
 #  DEPENDS system_lib

@@ -19,6 +19,8 @@ from math import exp
 
 from std_msgs.msg import String
 
+# class milling():
+
 def milling_paths():
 
     speed_move = 0.03
@@ -53,7 +55,7 @@ def milling_paths():
     print "============ Going up"
     org_pose = group.get_current_pose().pose
     print " org pos: " , org_pose
-    moveRelativePt(group, [0.0, 0.0, 0.03], speed_move)
+    moveRelativePt(group, [-0.05, 0.0, 0.0], speed_move)
 
     # group_variable_values = [-1.34895 , -1.56471 , 2.1641 , -0.744696 , 0.301079 , -2.99502]
     # moveJoint(group, group_variable_values, speed_move)
@@ -93,6 +95,10 @@ def moveJoint(group, group_variable_values, speed):
     group.go(wait=True)
     # group.execute(plan1)
     rospy.sleep(1)
+
+def moveScan(group):
+    joints = [1.6498934030532837, -1.896179501210348, 1.743403434753418, -2.9501288572894495, -1.6018841902362269, -6.26786235185434]
+    moveJoint(group, joints, 0.1)
 
 def moveCartesianPath(group, pts, org_pose, speed, steps):
     # group.set_max_velocity_scaling_factor(speed)

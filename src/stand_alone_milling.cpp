@@ -176,8 +176,8 @@ int main(int argc, char **argv)
   ROS_INFO_STREAM(
       "goto : " << target_pose.position.x << " , " << target_pose.position.y << " , " << target_pose.position.z);
 
-  success = group.plan(my_plan);
-  if(!success) return 0;
+  group.plan(my_plan);
+  // if(!success) return 0;
   group.move();
   sleep(1.0);
 
@@ -190,8 +190,8 @@ int main(int argc, char **argv)
   target_pose_2.position.y = poses[0].pose.position.y;
   ROS_INFO_STREAM("goto : " << target_pose_2.position.x << " , " << target_pose_2.position.y);
   group.setPoseTarget(target_pose_2);
-  success = group.plan(my_plan);
-  if(!success) return 0;
+  group.plan(my_plan);
+  // if(!success) return 0;
 
   group.move();
   sleep(1.0);
@@ -201,8 +201,8 @@ int main(int argc, char **argv)
   geometry_msgs::Pose target_pose_3 = group.getCurrentPose().pose;
   target_pose_3.position.z = poses[0].pose.position.z;
   group.setPoseTarget(target_pose_3);
-  success = group.plan(my_plan);
-  if(!success) return 0;
+  group.plan(my_plan);
+  // if(!success) return 0;
 
   group.move();
   sleep(1.0);

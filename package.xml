@@ -25,11 +25,11 @@
   <build_depend>object_detection</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>grasp_and_place_msgs</build_depend>
-  <build_depend>urdf_models</build_depend>
+  <!-- <build_depend>urdf_models</build_depend> -->
   <build_depend>opencv2</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>ur_msgs</build_depend>
-  
+
 
 
   <run_depend>geometry_msgs</run_depend>
@@ -45,7 +45,7 @@
   <run_depend>object_detection</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <run_depend>grasp_and_place_msgs</run_depend>
-  <run_depend>urdf_models</run_depend>
+  <!-- <run_depend>urdf_models</run_depend> -->
   <run_depend>opencv2</run_depend>
   <run_depend>cv_bridge</run_depend>
   <run_depend>ur_msgs</run_depend>

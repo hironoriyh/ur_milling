@@ -1,9 +1,9 @@
 <launch>
 	<node type="static_transform_publisher" pkg="tf" name="kinect2_link_broadcaster"
-		args = "0.3 0 0.88
+		args = "-0.3 0 0.0
 		1 0 0 0
-		world kinect2_link 10"/>
-		
+		world object_frame 10"/>
+
 	<!-- <node type="static_transform_publisher" pkg="tf" name="kinect2_ir_optical_frame_broadcaster"
 		args = "0 0 0.88
 		1 0 0 0
@@ -11,4 +11,3 @@
 </launch>
 
 <!-- tf quaternion:  x y z w -->
-
