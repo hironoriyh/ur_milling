@@ -4,4 +4,4 @@ velocity_cut:                      0.01
 max_acceleration:                   0.2
 eef_step:                           0.01
 
-distance_to_object:                   0.02
+distance_to_object:                   0.1

@@ -43,6 +43,7 @@ MillingPath::MillingPath(ros::NodeHandle& nh)
   move_group_->setPlanningTime(10);
   move_group_->setNumPlanningAttempts(10);
 
+  object_frame_ = "object_frame";
 
   // Set planning scene interface.
   planning_scene_.reset(new moveit::planning_interface::PlanningSceneInterface());
@@ -129,16 +130,30 @@ bool MillingPath::detectObjectCB(DetectObject::Request& req, DetectObject::Respo
 bool MillingPath::ExecuteMillingCB(DetectObject::Request& req, DetectObject::Response& res)
 {
 
+  // move to pose defined by joint values
+
+  ROS_INFO("move to scan pose");
+  std::vector<double> pose_1 = { 1.6498934030532837, -1.896179501210348, 1.743403434753418, -2.9501288572894495, -1.6018841902362269, -6.26786235185434 };
+  move_group_->setJointValueTarget(pose_1);
+  robot_state::RobotState joint_value_target = move_group_->getJointValueTarget();
+  moveit::planning_interface::MoveGroup::Plan my_plan;
+  move_group_->plan(my_plan);
+  move_group_->move();
+  ros::Duration(1.0).sleep();
+
+
 //  std_msgs::String msg;
 //  msg.data = "test";
+  ROS_INFO("scanning");
   object_detection::DetectObject srv;
   srv.request =req;
   DetectObject(srv);
+  ros::Duration(1.0).sleep();
 
 //  SetSpindle(1.0);
 
-  ROS_INFO("Move up");
-  MoveTranslation(0, 0, distance_to_object_);
+//  ROS_INFO("Move up");
+//  MoveTranslation(0, 0, distance_to_object_);
   //// go to...
   ROS_INFO("Move above the object");
   double height = move_group_->getCurrentPose().pose.position.z + distance_to_object_;
@@ -191,7 +206,7 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
       model_camera_pose.pose = srv.response.detected_model_poses[j];
 
       geometry_msgs::PoseStamped model_pose;
-      model_pose.header.frame_id = world_frame_;
+      model_pose.header.frame_id = object_frame_;
       model_pose.header.stamp = time;
 
       try {
@@ -199,8 +214,8 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
         const ros::Duration timeout(1);
         const ros::Duration polling_sleep_duration(4);
         std::string* error_msg = NULL;
-        tf_listener_.waitForTransform(world_frame_, camera_frame_, time, timeout, polling_sleep_duration, error_msg);
-        tf_listener_.transformPose(world_frame_, model_camera_pose, model_pose);
+        tf_listener_.waitForTransform(object_frame_, camera_frame_, time, timeout, polling_sleep_duration, error_msg);
+        tf_listener_.transformPose(object_frame_, model_camera_pose, model_pose);
       } catch (tf2::TransformException &ex) {
         ROS_WARN("%s", ex.what());
         ros::Duration(1.0).sleep();
@@ -210,15 +225,15 @@ bool MillingPath::DetectObject(object_detection::DetectObject srv)
       // Visualize object mesh.
       ROS_INFO_STREAM("DetectObject \n "   << model_camera_pose.pose);
       visualization_msgs::Marker object_mesh_marker = VisualizeMarker(
-          visualization_msgs::Marker::MESH_RESOURCE, model_camera_pose.pose, j, .5, .5, .5, .8);
+          visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
 //      visualization_msgs::Marker::MESH_RESOURCE, model_pose.pose, j, .5, .5, .5, .8);
 //
-//      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.dae";
-      std::string model_path = "package://urdf_models/models/"  + id + "/mesh/mesh.stl";
+      std::string model_path = "package://object_registration/models/"  + id + "/mesh/mesh.dae";
+//      std::string model_path = "package://object_registration/models/"  + id + "/mesh/mesh.stl";
 
       object_mesh_marker.mesh_resource = model_path;
       object_mesh_marker.ns = id;
-      object_mesh_marker.header.frame_id =camera_frame_;
+//      object_mesh_marker.header.frame_id =camera_frame_;
 //      object_mesh_marker.header.frame_id =object_frame_;
 
       mesh_publisher_.publish(object_mesh_marker);
@@ -450,7 +465,7 @@ visualization_msgs::Marker MillingPath::VisualizeMarker(const int marker_type,
   marker.color.g = g;
   marker.color.b = b;
   marker.color.a = a;
-  marker.header.frame_id = world_frame_;
+  marker.header.frame_id = object_frame_;
   marker.id = id;
   marker.type = marker_type;
   marker.action = visualization_msgs::Marker::ADD;
