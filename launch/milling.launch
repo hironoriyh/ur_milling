@@ -1,6 +1,6 @@
 <launch>
 
-  <include file="$(find realsense_camera)/launch/sr300_nodelet_rgbd.launch" />
+  <!-- <include file="$(find realsense_camera)/launch/sr300_nodelet_rgbd.launch" /> -->
 
   <!-- <include file="$(find aruco)/launch/realsense.launch" /> -->
 
@@ -10,8 +10,8 @@
 		object_frame world 10"/>
 
     <node type="static_transform_publisher" pkg="tf" name="realsense_broadcaster"
-  		args = "-0.216, -0.010, 0.590
--0.008, 0.585, 0.026, 0.810
+  		args = "-0.217, -0.009, 0.593
+-0.012, 0.610, 0.031, 0.792
   		object_frame camera_link 10"/>
 
   <node name="milling_path" pkg="ur3_milling" type="milling_path_node" respawn="false" output="screen">
