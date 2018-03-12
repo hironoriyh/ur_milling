@@ -118,15 +118,16 @@ int main(int argc, char **argv)
   for (int i = 0; i < 6; i++)
     std::cout << group_variable_values[i] << " , ";
   std::cout << std::endl;
-
-//  group_variable_values= {
-//   3.14674 , -1.92604 , -1.42526 , -2.91299 , -1.10208 , -3.1556
-//  };
-//  group.setJointValueTarget(group_variable_values);
-//  success = group.plan(my_plan);
-//  if(!success) return 0;
-//  group.execute(my_plan);
-//  sleep(1.0);
+ //
+ // group_variable_values= {
+ // // -0.443907 , -2.01447 , -1.75589 , -2.4653 , -0.498809 , -0.0951646
+ // -0.704501 , -2.32258 , -1.22096 , -2.70715 , -0.759202 , -0.0751389
+ // };
+ // group.setJointValueTarget(group_variable_values);
+ // success = group.plan(my_plan);
+ // if(!success) return 0;
+ // group.execute(my_plan);
+ // sleep(1.0);
 
 /////// get txt data
 
@@ -152,8 +153,8 @@ int main(int argc, char **argv)
         } else {
         std::string::size_type sz;
         geometry_msgs::PoseStamped pose = group.getCurrentPose();
-        pose.pose.position.x -= std::stod(tokens[0], &sz) * 0.001;
-        pose.pose.position.y -= std::stod(tokens[1], &sz) * 0.001;
+        pose.pose.position.x -= std::stod(tokens[1], &sz) * 0.001;
+        pose.pose.position.y -= std::stod(tokens[0], &sz) * 0.001;
         pose.pose.position.z += std::stod(tokens[2], &sz) * 0.001;
         //    ROS_INFO_STREAM("position: " << pose.pose.position.x << " , " <<pose.pose.position.y << " , " <<pose.pose.position.z);
         poses.push_back(pose);

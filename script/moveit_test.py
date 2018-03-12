@@ -51,14 +51,14 @@ def milling_paths():
                                     moveit_msgs.msg.DisplayTrajectory,
                                     queue_size=20)
     print "current joint values:  ", group.get_current_joint_values()
+    group_variable_values = [-0.728125397359 -2.33498222033 -1.07826596895 -2.83821374575 -0.783352677022 -0.0740349928485]
+    moveJoint(group, group_variable_values, speed_move)
 
-    print "============ Going up"
-    org_pose = group.get_current_pose().pose
-    print " org pos: " , org_pose
-    moveRelativePt(group, [-0.05, 0.0, 0.0], speed_move)
+    # print "============ Going up"
+    # org_pose = group.get_current_pose().pose
+    # print " org pos: " , org_pose
+    # moveRelativePt(group, [-0.05, 0.0, 0.0], speed_move)
 
-    # group_variable_values = [-1.34895 , -1.56471 , 2.1641 , -0.744696 , 0.301079 , -2.99502]
-    # moveJoint(group, group_variable_values, speed_move)
 #     print "============ Going up"
 #     org_pose = group.get_current_pose().pose
 #     print " org pos: " , org_pose
