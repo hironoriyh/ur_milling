@@ -51,7 +51,7 @@ def milling_paths():
                                     moveit_msgs.msg.DisplayTrajectory,
                                     queue_size=20)
     print "current joint values:  ", group.get_current_joint_values()
-    group_variable_values = [-0.728125397359 -2.33498222033 -1.07826596895 -2.83821374575 -0.783352677022 -0.0740349928485]
+    group_variable_values = [-1.349, -2.2726, -1.301410977040426, -2.6476529280291956, -2.3054516951190394, -0.03478604951967412]
     moveJoint(group, group_variable_values, speed_move)
 
     # print "============ Going up"
